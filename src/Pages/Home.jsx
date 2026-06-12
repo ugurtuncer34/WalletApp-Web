@@ -1,14 +1,32 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
   const [inputText, setInputText] = useState("");
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  // Tarayıcı hafızasından Token'ı okuyoruz
+  const token = localStorage.getItem('wallet_token');
 
   // Sayfa açıldığında son harcamaları getir
   const fetchTransactions = async () => {
     try {
-      const res = await fetch('http://localhost:5139/api/transactions'); // Portu kontrol et
+      const res = await fetch('http://localhost:5139/api/transactions', {
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        }
+      });
+
+      // Eğer Token sahteyse veya süresi dolmuşsa çıkışa yolla
+      if (res.status === 401) {
+        localStorage.removeItem('wallet_token');
+        navigate('/login');
+        return;
+      }
+
       const data = await res.json();
       setTransactions(data);
     } catch (err) {
@@ -17,8 +35,13 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // Bileti olmayan ana sayfayı göremez!
+    if (!token) {
+      navigate('/login');
+      return;
+    }
     fetchTransactions();
-  }, []);
+  }, [token, navigate]);
 
   // Quick Add API'sine İstek Atma
   const handleQuickAdd = async (textToSubmit) => {
@@ -28,13 +51,16 @@ export default function Home() {
     try {
       const res = await fetch('http://localhost:5139/api/transactions/quick-add', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Burada da bileti gösteriyoruz
+        },
         body: JSON.stringify({ text: textToSubmit })
       });
 
       if (res.ok) {
-        setInputText(""); // Başarılıysa inputu temizle
-        fetchTransactions(); // Listeyi yenile
+        setInputText(""); 
+        fetchTransactions(); 
       } else {
         const errText = await res.text();
         alert("Hata: " + errText);
@@ -46,25 +72,32 @@ export default function Home() {
     }
   };
 
-  // Inputta Enter'a basınca tetiklenmesi için
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleQuickAdd(inputText);
     }
   };
 
-  // Hızlı Çip (Quick Chip) butonuna tıklandığında
   const handleChipClick = (chipWord) => {
-    // Sadece rakam girilmişse (örn: "150"), sonuna çipi ekle ve yolla ("150 kahve")
     const amountMatch = inputText.match(/^\d+(\.\d+)?$/); 
-    
     if (amountMatch) {
       const finalString = `${inputText} ${chipWord}`;
       handleQuickAdd(finalString);
     } else {
-      // Rakam yoksa inputa sadece kelimeyi ekle
       setInputText((prev) => prev + (prev ? " " : "") + chipWord);
     }
+  };
+
+  // Tarihi profesyonelce Türkçe formatlayan fonksiyon
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    return d.toLocaleDateString('tr-TR', { 
+      day: 'numeric', 
+      month: 'long', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    }); // Çıktı: "12 Haziran, 15:30"
   };
 
   return (
@@ -104,7 +137,11 @@ export default function Home() {
             <div key={t.id} className="bg-white p-4 rounded-xl flex items-center justify-between shadow-sm border border-gray-50">
               <div className="flex items-center gap-4">
                 <span className="text-2xl">{t.categoryIcon}</span>
-                <div>
+                <div className="flex flex-col">
+                  {/* Tarih Alanı Eklendi */}
+                  <span className="text-[11px] font-medium text-gray-400 mb-0.5 uppercase tracking-wide">
+                    {formatDateTime(t.date)}
+                  </span>
                   <p className="font-semibold text-gray-800 capitalize">{t.description}</p>
                   <p className="text-sm text-gray-500">
                     {t.categoryName} {t.merchantName ? `• ${t.merchantName}` : ''}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // API Adresini dışarı aldık (Merkezi Yönetim)
 const API_BASE = 'http://localhost:5139/api';
@@ -6,11 +7,27 @@ const API_BASE = 'http://localhost:5139/api';
 export default function MasterData() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const token = localStorage.getItem('wallet_token');
 
   const fetchMasterData = () => {
     setLoading(true);
-    fetch(`${API_BASE}/admin/master-data`)
-      .then((res) => res.json())
+    fetch(`${API_BASE}/admin/master-data`, {
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // VIP Bileti kapı görevlisine uzatıyoruz
+        }
+      })
+      .then((res) => {
+        // Token süresi dolmuşsa veya sahteyse direkt Login'e at
+        if (res.status === 401) {
+          localStorage.removeItem('wallet_token');
+          navigate('/login');
+          throw new Error('Yetkisiz erişim');
+        }
+        return res.json();
+      })
       .then((resData) => {
         setData(resData);
         setLoading(false);
@@ -22,8 +39,12 @@ export default function MasterData() {
   };
 
   useEffect(() => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
     fetchMasterData();
-  }, []);
+  }, [token, navigate]);
 
   if (loading && !data) return <div className="p-8 text-gray-500">Veritabanı taranıyor...</div>;
   if (!data) return <div className="p-8 text-red-500">Veri bulunamadı. Backend açık mı?</div>;
@@ -36,15 +57,16 @@ export default function MasterData() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 items-start">
         
+        {/* TOKEN'I COMPONENTLERE PROP OLARAK GEÇİYORUZ */}
         <GenericList 
           title="Kategoriler" 
           icon="📁" 
           items={data.categories} 
           endpoint="categories" 
+          token={token}
           fields={[
             { name: 'name', placeholder: 'Kategori Adı', type: 'text' }, 
             { name: 'icon', placeholder: 'İkon (Örn: 🛒)', type: 'text' },
-            // Parent Category için Dropdown (Kendi kendini referans alıyor)
             { name: 'parentCategoryId', placeholder: 'Üst Kategori', type: 'select', options: data.categories }
           ]}
           onRefresh={fetchMasterData}
@@ -55,6 +77,7 @@ export default function MasterData() {
           icon="🌍" 
           items={data.countries} 
           endpoint="countries" 
+          token={token}
           fields={[
             { name: 'name', placeholder: 'Ülke Adı', type: 'text' }, 
             { name: 'code', placeholder: 'Kod (Örn: TR)', type: 'text' }
@@ -67,9 +90,9 @@ export default function MasterData() {
           icon="🏢" 
           items={data.merchants} 
           endpoint="merchants" 
+          token={token}
           fields={[
             { name: 'name', placeholder: 'İşyeri Adı', type: 'text' },
-            // Merchant için Varsayılan Kategori Dropdown'ı
             { name: 'defaultCategoryId', placeholder: 'Varsayılan Kategori', type: 'select', options: data.categories }
           ]}
           onRefresh={fetchMasterData}
@@ -80,6 +103,7 @@ export default function MasterData() {
           icon="💵" 
           items={data.currencies} 
           endpoint="currencies" 
+          token={token}
           fields={[
             { name: 'name', placeholder: 'Kur Adı', type: 'text' }, 
             { name: 'code', placeholder: 'Kod (USD)', type: 'text' }, 
@@ -93,6 +117,7 @@ export default function MasterData() {
           icon="🏷️" 
           items={data.tags} 
           endpoint="tags" 
+          token={token}
           fields={[
             { name: 'name', placeholder: 'Etiket Adı', type: 'text' }, 
             { name: 'color', placeholder: 'Renk (Hex: #fff)', type: 'text' }
@@ -106,15 +131,14 @@ export default function MasterData() {
 }
 
 // ============================================================================
-// GENERIC LIST COMPONENT (Artık Dropdown Destekli)
+// GENERIC LIST COMPONENT
 // ============================================================================
-function GenericList({ title, icon, items = [], endpoint, fields, onRefresh }) {
+function GenericList({ title, icon, items = [], endpoint, fields, onRefresh, token }) {
   const [formData, setFormData] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e, fieldName) => {
     const val = e.target.value;
-    // Eğer select kutusunda "Seçiniz" (boş) seçildiyse Guid hatası almamak için null gönderiyoruz
     setFormData({ ...formData, [fieldName]: val === "" ? null : val });
   };
 
@@ -125,7 +149,10 @@ function GenericList({ title, icon, items = [], endpoint, fields, onRefresh }) {
     try {
       const res = await fetch(`${API_BASE}/${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // EKLEME İŞLEMİ İÇİN TOKEN EKLENDİ
+        },
         body: JSON.stringify(formData)
       });
 
@@ -133,7 +160,9 @@ function GenericList({ title, icon, items = [], endpoint, fields, onRefresh }) {
         setFormData({});
         onRefresh();
       } else {
-        alert("Ekleme başarısız oldu. API'yi kontrol edin.");
+        // 401 hatası dönerse kullanıcıya bildir
+        if (res.status === 401) alert("Bunun için yetkiniz yok (Oturum süresi dolmuş olabilir).");
+        else alert("Ekleme başarısız oldu. API'yi kontrol edin.");
       }
     } catch (err) {
       alert("Sunucuya ulaşılamadı.");
@@ -148,13 +177,17 @@ function GenericList({ title, icon, items = [], endpoint, fields, onRefresh }) {
 
     try {
       const res = await fetch(`${API_BASE}/${endpoint}/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${token}` // SİLME İŞLEMİ İÇİN TOKEN EKLENDİ
+        }
       });
 
       if (res.ok) {
         onRefresh();
       } else {
-        alert("Silme başarısız! Bu kayıt başka bir tabloda kullanılıyor olabilir.");
+        if (res.status === 401) alert("Silme yetkiniz yok.");
+        else alert("Silme başarısız! Bu kayıt başka bir tabloda kullanılıyor olabilir.");
       }
     } catch (err) {
       alert("Sunucuya ulaşılamadı.");
@@ -185,7 +218,6 @@ function GenericList({ title, icon, items = [], endpoint, fields, onRefresh }) {
                   {item.code && <span className="text-xs text-gray-400 font-mono">{item.code}</span>}
                 </div>
                 
-                {/* Alt Detaylar (Parent Category veya Default Category) */}
                 {(item.parentCategory || item.defaultCategory) && (
                   <span className="text-[10px] text-gray-400 mt-0.5 ml-1">
                     ↳ {item.parentCategory?.name || item.defaultCategory?.name}
@@ -208,7 +240,6 @@ function GenericList({ title, icon, items = [], endpoint, fields, onRefresh }) {
       <div className="p-3 border-t border-gray-100 bg-gray-50/30 rounded-b-2xl">
         <form onSubmit={handleAdd} className="flex flex-col gap-2">
           {fields.map((field) => {
-            // EĞER TİP "SELECT" İSE DROPDOWN RENDER ET
             if (field.type === 'select') {
               return (
                 <select
@@ -225,7 +256,6 @@ function GenericList({ title, icon, items = [], endpoint, fields, onRefresh }) {
               );
             }
             
-            // TİP "TEXT" İSE NORMAL INPUT RENDER ET
             return (
               <input
                 key={field.name}
