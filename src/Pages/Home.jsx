@@ -204,7 +204,7 @@ export default function Home() {
               className="w-full text-lg p-3 bg-gray-50 border border-transparent rounded-xl focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 mb-4 transition"
             />
             <div className="flex flex-wrap gap-2">
-              {["Kahve", "Market", "Akaryakıt", "Eczane", "Fatura"].map((chip) => (
+              {["Kahve", "Fırın", "File", "Şok", "Opet"].map((chip) => (
                 <button
                   key={chip}
                   onClick={() => handleChipClick(chip.toLowerCase())}
@@ -314,6 +314,15 @@ export default function Home() {
                   ) : (
                     <div className="h-full flex items-center justify-center text-gray-400 text-sm">Veri yok.</div>
                   )}
+                </div>
+                {/* Pasta Altı Lejant */}
+                <div className="flex flex-wrap justify-center gap-3 mt-4">
+                  {dashboard.categoryDistribution?.slice(0, 5).map((entry, index) => (
+                    <div key={index} className="flex items-center gap-1.5 text-xs text-gray-600">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                      {entry.label}
+                    </div>
+                  ))}
                 </div>
               </div>
 
