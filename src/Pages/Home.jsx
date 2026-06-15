@@ -31,6 +31,11 @@ export default function Home() {
   const [hasSearched, setHasSearched] = useState(false);
   const [filterLoading, setFilterLoading] = useState(false);
 
+  // === YENİ: MODAL STATE'LERİ ===
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedChip, setSelectedChip] = useState("");
+  const [chipAmount, setChipAmount] = useState("");
+
   const token = localStorage.getItem('wallet_token');
   const API_BASE = 'http://localhost:5139/api';
 
@@ -69,7 +74,6 @@ export default function Home() {
     }
   };
 
-  // Dropdown seçeneklerini doldurmak için Master Data'yı çekiyoruz
   const fetchFilterOptions = async () => {
     try {
       const res = await fetch(`${API_BASE}/admin/master-data`, {
@@ -85,23 +89,17 @@ export default function Home() {
     }
   };
 
-  // Gelişmiş Filtreli Arama Tetikleyicisi
   const handleFilterSearch = async (e) => {
     e.preventDefault();
     setFilterLoading(true);
     try {
-      // Backend pagination modelini sorgu için 50 kayıtlık tek sayfa gibi genişletiyoruz
       let url = `${API_BASE}/transactions?PageNumber=1&PageSize=50`;
-      
       if (filterCategoryId) url += `&CategoryId=${filterCategoryId}`;
       if (filterMerchantId) url += `&MerchantId=${filterMerchantId}`;
       if (filterStartDate) url += `&StartDate=${filterStartDate}`;
       if (filterEndDate) url += `&EndDate=${filterEndDate}`;
 
-      const res = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
+      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
         setFilteredTransactions(data.items || []);
@@ -133,7 +131,7 @@ export default function Home() {
     fetchFilterOptions();
   }, [token, navigate]);
 
-  // === QUICK ADD & HELPERS ===
+  // === QUICK ADD (Ana Input veya Modal'dan Tetiklenir) ===
   const handleQuickAdd = async (textToSubmit) => {
     if (!textToSubmit) return;
     setLoading(true);
@@ -149,9 +147,11 @@ export default function Home() {
 
       if (res.ok) {
         setInputText(""); 
+        setChipAmount(""); // Modal inputunu temizle
+        setIsModalOpen(false); // Modalı kapat
         fetchDashboard();
         fetchTransactions(1); 
-        if (hasSearched) handleFilterSearch({ preventDefault: () => {} }); // Arama açıksa listeyi tazele
+        if (hasSearched) handleFilterSearch({ preventDefault: () => {} }); 
       } else {
         const errData = await res.json();
         alert("Hata: " + (errData.message || "Bilinmeyen hata"));
@@ -163,14 +163,24 @@ export default function Home() {
     }
   };
 
+  // Ana Input Enter
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') handleQuickAdd(inputText);
   };
 
+  // Çipe Tıklandığında Modalı Aç
   const handleChipClick = (chipWord) => {
-    const amountMatch = inputText.match(/^\d+(\.\d+)?$/); 
-    if (amountMatch) handleQuickAdd(`${inputText} ${chipWord}`);
-    else setInputText((prev) => prev + (prev ? " " : "") + chipWord);
+    setSelectedChip(chipWord);
+    setChipAmount(""); // Önceki değeri temizle
+    setIsModalOpen(true);
+  };
+
+  // Modal İçindeki Form Gönderildiğinde (Enter veya Buton)
+  const handleModalSubmit = (e) => {
+    e.preventDefault();
+    if (!chipAmount) return;
+    // Rakam ve kelimeyi birleştir (Örn: "150 kahve") ve Quick Add'e gönder
+    handleQuickAdd(`${chipAmount} ${selectedChip}`);
   };
 
   const formatDateTime = (dateString) => {
@@ -187,13 +197,56 @@ export default function Home() {
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 font-sans flex flex-col gap-8">
       
+      {/* ========================================================= */}
+      {/* YENİ: QUICK CHIP MODAL (Overlay & Dialog)                   */}
+      {/* ========================================================= */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800 capitalize">{selectedChip} Ekle</h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleModalSubmit} className="flex flex-col gap-4">
+              <div>
+                <label className="text-sm font-bold text-gray-500 uppercase mb-2 block">Tutar (₺)</label>
+                <input
+                  type="number"
+                  autoFocus // Modal açılır açılmaz imleci buraya odaklar
+                  value={chipAmount}
+                  onChange={(e) => setChipAmount(e.target.value)}
+                  placeholder="Örn: 150"
+                  disabled={loading}
+                  className="w-full text-2xl p-4 bg-gray-50 border border-transparent rounded-xl focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading || !chipAmount}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition shadow-md disabled:opacity-50"
+              >
+                {loading ? 'Ekleniyor...' : 'Kaydet'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ÜST GRİD: OPERASYON VE GRAFİKLER */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* SOL KOLON: OPERASYON MERKEZİ */}
         <div className="lg:col-span-4 flex flex-col gap-6">
+          
+          {/* AKILLI GİRİŞ BÖLÜMÜ */}
           <div className="bg-white p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
-            <h2 className="text-gray-800 font-bold mb-4">Hızlı Ekle</h2>
+            <h2 className="text-gray-800 font-bold mb-4">Akıllı Giriş</h2>
             <input
               type="text"
               value={inputText}
@@ -201,16 +254,21 @@ export default function Home() {
               onKeyDown={handleKeyDown}
               placeholder="Örn: 150 file market..."
               disabled={loading}
-              className="w-full text-lg p-3 bg-gray-50 border border-transparent rounded-xl focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 mb-4 transition"
+              className="w-full text-lg p-3 bg-gray-50 border border-transparent rounded-xl focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition"
             />
+          </div>
+
+          {/* HIZLI ÇİPLER (AYRI BİR SEGMENT) */}
+          <div className="bg-white p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
+            <h2 className="text-gray-800 font-bold mb-3 text-sm">Hızlı İşlem (Tek Tık)</h2>
             <div className="flex flex-wrap gap-2">
-              {["Kahve", "Fırın", "File", "Şok", "Opet"].map((chip) => (
+              {["Kahve", "File", "Fırın", "Şok", "Opet", "Eczane"].map((chip) => (
                 <button
                   key={chip}
                   onClick={() => handleChipClick(chip.toLowerCase())}
-                  className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-medium text-xs hover:bg-blue-100 transition active:scale-95"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 rounded-xl font-semibold text-sm hover:from-blue-100 hover:to-blue-200 border border-blue-200/50 shadow-sm transition active:scale-95"
                 >
-                  + {chip}
+                  ⚡ {chip}
                 </button>
               ))}
             </div>
@@ -331,10 +389,10 @@ export default function Home() {
                 <div className="h-[250px]">
                   {dashboard.merchantDistribution?.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dashboard.merchantDistribution.slice(0, 5)} layout="vertical" margin={{ left: 10, right: 20 }}>
+                      <BarChart data={dashboard.merchantDistribution.slice(0, 5)} layout="vertical" margin={{ left: 0, right: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f3f4f6" />
                         <XAxis type="number" hide />
-                        <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#6b7280'}} width={110} />
+                        <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#6b7280'}} width={80} />
                         <Tooltip cursor={{fill: '#f9fafb'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                         <Bar dataKey="value" name="Tutar (₺)" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
                       </BarChart>
@@ -350,16 +408,13 @@ export default function Home() {
         )}
       </div>
 
-      {/* ========================================================= */}
-      {/* 4. BÖLÜM: EN ALT KISIM - GELİŞMİŞ FİLTRELİ SORGULAMA       */}
-      {/* ========================================================= */}
+      {/* 4. BÖLÜM: EN ALT KISIM - GELİŞMİŞ FİLTRELİ SORGULAMA */}
       <div className="bg-white p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
         <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">
           🔍 Gelişmiş Harcama Arama
         </h3>
         
         <form onSubmit={handleFilterSearch} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
-          {/* Başlangıç Tarihi */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold text-gray-400 uppercase">Başlangıç</label>
             <input 
@@ -370,7 +425,6 @@ export default function Home() {
             />
           </div>
 
-          {/* Bitiş Tarihi */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold text-gray-400 uppercase">Bitiş</label>
             <input 
@@ -381,7 +435,6 @@ export default function Home() {
             />
           </div>
 
-          {/* Kategori Seçimi */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold text-gray-400 uppercase">Kategori</label>
             <select
@@ -394,7 +447,6 @@ export default function Home() {
             </select>
           </div>
 
-          {/* İşyeri Seçimi */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold text-gray-400 uppercase">İşyeri</label>
             <select
@@ -407,7 +459,6 @@ export default function Home() {
             </select>
           </div>
 
-          {/* Butonlar Grubu */}
           <div className="flex gap-2">
             <button
               type="submit"
@@ -429,7 +480,6 @@ export default function Home() {
           </div>
         </form>
 
-        {/* SORGULAMA SONUÇLARI ALANI */}
         {hasSearched && (
           <div className="mt-6 pt-6 border-t border-gray-100 animate-fadeIn">
             <h4 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">
