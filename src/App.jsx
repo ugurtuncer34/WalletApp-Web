@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
-import Home from './pages/Home';
-import MasterData from './pages/MasterData';
-import Login from './pages/Login'; // Yeni sayfamızı import ettik
+import Home from './Pages/Home';
+import MasterData from './Pages/MasterData';
+import Login from './Pages/Login'; // Yeni sayfamızı import ettik
 
 // Çıkış butonu işlemi için yardımcı bileşen
 function Navbar() {
