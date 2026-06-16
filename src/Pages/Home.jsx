@@ -289,7 +289,7 @@ export default function Home() {
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-semibold text-gray-400 mb-0.5 uppercase tracking-wider">{formatDateTime(t.date)}</span>
-                      <p className="font-semibold text-gray-800 text-sm capitalize">{t.description}</p>
+                      <p className="font-semibold text-gray-800 text-sm capitalize">{t.description ? t.description : t.categoryName}</p>
                       <p className="text-xs text-gray-500">{t.categoryName} {t.merchantName ? `• ${t.merchantName}` : ''}</p>
                     </div>
                   </div>
