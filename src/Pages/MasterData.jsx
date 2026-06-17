@@ -1,9 +1,9 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// API Adresini dışarı aldık (Merkezi Yönetim)
 const API_BASE = 'http://localhost:5139/api';
 
 export default function MasterData() {
@@ -18,11 +18,10 @@ export default function MasterData() {
     fetch(`${API_BASE}/admin/master-data`, {
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // VIP Bileti kapı görevlisine uzatıyoruz
+          'Authorization': `Bearer ${token}`
         }
       })
       .then((res) => {
-        // Token süresi dolmuşsa veya sahteyse direkt Login'e at
         if (res.status === 401) {
           localStorage.removeItem('wallet_token');
           navigate('/login');
@@ -59,7 +58,6 @@ export default function MasterData() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 items-start">
         
-        {/* TOKEN'I COMPONENTLERE PROP OLARAK GEÇİYORUZ */}
         <GenericList 
           title="Kategoriler" 
           icon="📁" 
@@ -133,38 +131,62 @@ export default function MasterData() {
 }
 
 // ============================================================================
-// GENERIC LIST COMPONENT
+// GENERIC LIST COMPONENT (AKILLI - Ekle & Güncelle Yetenekli)
 // ============================================================================
 function GenericList({ title, icon, items = [], endpoint, fields, onRefresh, token }) {
   const [formData, setFormData] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editModeId, setEditModeId] = useState(null); // Güncelleme Modu Takibi
 
   const handleInputChange = (e, fieldName) => {
     const val = e.target.value;
     setFormData({ ...formData, [fieldName]: val === "" ? null : val });
   };
 
-  const handleAdd = async (e) => {
+  // Düzenle Butonuna Basıldığında Formu Doldur
+  const handleEditClick = (item) => {
+    setEditModeId(item.id);
+    
+    // Yabancı anahtarları (Foreign Keys) güvenli şekilde map'le
+    const mappedData = { ...item };
+    if (item.parentCategory) mappedData.parentCategoryId = item.parentCategory.id;
+    if (item.defaultCategory) mappedData.defaultCategoryId = item.defaultCategory.id;
+    
+    setFormData(mappedData);
+  };
+
+  // Düzenleme Modundan Çıkış
+  const handleCancelEdit = () => {
+    setEditModeId(null);
+    setFormData({});
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     
+    const isUpdate = editModeId !== null;
+    const url = isUpdate ? `${API_BASE}/${endpoint}/${editModeId}` : `${API_BASE}/${endpoint}`;
+    const method = isUpdate ? 'PUT' : 'POST';
+    
     try {
-      const res = await fetch(`${API_BASE}/${endpoint}`, {
-        method: 'POST',
+      const res = await fetch(url, {
+        method: method,
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // EKLEME İŞLEMİ İÇİN TOKEN EKLENDİ
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        // Sadece formdatayı gönderiyoruz, editModeId PUT urline eklendiği için yeterli
+        body: JSON.stringify({ ...formData, id: isUpdate ? editModeId : undefined }) 
       });
 
       if (res.ok) {
         setFormData({});
+        setEditModeId(null);
         onRefresh();
       } else {
-        // 401 hatası dönerse kullanıcıya bildir
-        if (res.status === 401) alert("Bunun için yetkiniz yok (Oturum süresi dolmuş olabilir).");
-        else alert("Ekleme başarısız oldu. API'yi kontrol edin.");
+        const errorData = await res.json();
+        alert(`İşlem başarısız: ${errorData.message || res.statusText}`);
       }
     } catch (err) {
       alert("Sunucuya ulaşılamadı.");
@@ -180,16 +202,15 @@ function GenericList({ title, icon, items = [], endpoint, fields, onRefresh, tok
     try {
       const res = await fetch(`${API_BASE}/${endpoint}/${id}`, {
         method: 'DELETE',
-        headers: { 
-          'Authorization': `Bearer ${token}` // SİLME İŞLEMİ İÇİN TOKEN EKLENDİ
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (res.ok) {
+        if(editModeId === id) handleCancelEdit(); // Eğer sildiği kaydı o an düzenliyorsa, formu da temizle
         onRefresh();
       } else {
-        if (res.status === 401) alert("Silme yetkiniz yok.");
-        else alert("Silme başarısız! Bu kayıt başka bir tabloda kullanılıyor olabilir.");
+        const errData = await res.json().catch(() => ({}));
+        alert(`Silme başarısız! ${errData.message || "Bu kayıt başka bir tabloda kullanılıyor olabilir."}`);
       }
     } catch (err) {
       alert("Sunucuya ulaşılamadı.");
@@ -197,11 +218,11 @@ function GenericList({ title, icon, items = [], endpoint, fields, onRefresh, tok
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[75vh]">
+    <div className={`bg-white rounded-2xl shadow-sm flex flex-col h-[75vh] transition ${editModeId ? 'border border-blue-400 ring-2 ring-blue-100' : 'border border-gray-100'}`}>
       
-      <div className="p-4 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl">
+      <div className={`p-4 border-b bg-gray-50/50 rounded-t-2xl ${editModeId ? 'border-blue-100 bg-blue-50/30' : 'border-gray-100'}`}>
         <h3 className="font-bold text-gray-700 flex items-center justify-between">
-          <span>{icon} {title}</span>
+          <span>{icon} {title} {editModeId && <span className="text-xs text-blue-500 ml-1">(Düzenleniyor)</span>}</span>
           <span className="text-xs bg-gray-200 text-gray-600 py-1 px-2 rounded-full">{items.length}</span>
         </h3>
       </div>
@@ -211,12 +232,12 @@ function GenericList({ title, icon, items = [], endpoint, fields, onRefresh, tok
           <p className="text-sm text-gray-400 text-center py-4">Kayıt yok</p>
         ) : (
           items.map((item) => (
-            <div key={item.id} className="group flex justify-between items-start p-2 hover:bg-gray-50 rounded-lg border-b border-transparent hover:border-gray-100 transition">
+            <div key={item.id} className={`group flex justify-between items-start p-2 rounded-lg border-b border-transparent transition ${editModeId === item.id ? 'bg-blue-50/50' : 'hover:bg-gray-50 hover:border-gray-100'}`}>
               <div className="flex flex-col overflow-hidden">
                 <div className="flex items-center gap-2">
                   {item.icon && <span>{item.icon}</span>}
                   {item.color && <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></span>}
-                  <span className="text-sm font-medium text-gray-700 truncate" title={item.name}>{item.name}</span>
+                  <span className={`text-sm font-medium truncate ${editModeId === item.id ? 'text-blue-700' : 'text-gray-700'}`} title={item.name}>{item.name}</span>
                   {item.code && <span className="text-xs text-gray-400 font-mono">{item.code}</span>}
                 </div>
                 
@@ -227,20 +248,29 @@ function GenericList({ title, icon, items = [], endpoint, fields, onRefresh, tok
                 )}
               </div>
               
-              <button 
-                onClick={() => handleDelete(item.id, item.name)}
-                className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1 rounded-md transition opacity-0 group-hover:opacity-100"
-                title="Sil"
-              >
-                ✕
-              </button>
+              <div className="flex opacity-0 group-hover:opacity-100 transition gap-1">
+                <button 
+                  onClick={() => handleEditClick(item)}
+                  className="text-gray-300 hover:text-blue-500 hover:bg-blue-50 p-1 rounded-md transition"
+                  title="Düzenle"
+                >
+                  ✏️
+                </button>
+                <button 
+                  onClick={() => handleDelete(item.id, item.name)}
+                  className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1 rounded-md transition"
+                  title="Sil"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           ))
         )}
       </div>
 
-      <div className="p-3 border-t border-gray-100 bg-gray-50/30 rounded-b-2xl">
-        <form onSubmit={handleAdd} className="flex flex-col gap-2">
+      <div className={`p-3 border-t bg-gray-50/30 rounded-b-2xl ${editModeId ? 'border-blue-100 bg-blue-50/30' : 'border-gray-100'}`}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           {fields.map((field) => {
             if (field.type === 'select') {
               return (
@@ -251,7 +281,8 @@ function GenericList({ title, icon, items = [], endpoint, fields, onRefresh, tok
                   className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition bg-white"
                 >
                   <option value="">{field.placeholder} (Opsiyonel)</option>
-                  {field.options?.map(opt => (
+                  {field.options?.filter(opt => opt.id !== editModeId).map(opt => (
+                    // Kendini üst kategori/varsayılan kategori olarak seçmesini engelliyoruz (opt.id !== editModeId)
                     <option key={opt.id} value={opt.id}>{opt.name}</option>
                   ))}
                 </select>
@@ -271,13 +302,25 @@ function GenericList({ title, icon, items = [], endpoint, fields, onRefresh, tok
             );
           })}
           
-          <button 
-            type="submit" 
-            disabled={isSubmitting}
-            className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold text-sm py-2 rounded-lg transition disabled:opacity-50"
-          >
-            {isSubmitting ? 'Ekleniyor...' : '+ Ekle'}
-          </button>
+          <div className="flex gap-2 mt-1">
+            <button 
+              type="submit" 
+              disabled={isSubmitting}
+              className={`flex-1 font-semibold text-sm py-2 rounded-lg transition disabled:opacity-50 ${editModeId ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' : 'bg-blue-50 hover:bg-blue-100 text-blue-600'}`}
+            >
+              {isSubmitting ? 'İşleniyor...' : (editModeId ? 'Kaydet' : '+ Ekle')}
+            </button>
+            
+            {editModeId && (
+              <button 
+                type="button"
+                onClick={handleCancelEdit}
+                className="px-4 font-semibold text-sm py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
+              >
+                İptal
+              </button>
+            )}
+          </div>
         </form>
       </div>
 
