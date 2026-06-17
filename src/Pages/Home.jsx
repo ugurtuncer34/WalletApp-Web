@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar
 } from 'recharts';
@@ -20,7 +20,7 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true);
   const [dashboard, setDashboard] = useState(null);
 
-  // Master Data State'leri (Artık Ülke ve Para Birimi de var)
+  // Master Data State'leri 
   const [categories, setCategories] = useState([]);
   const [merchants, setMerchants] = useState([]);
   const [countries, setCountries] = useState([]);
@@ -43,10 +43,15 @@ export default function Home() {
   });
   const [manualLoading, setManualLoading] = useState(false);
 
-  // Modal State'leri
+  // Modal State'leri (Hızlı Ekleme)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedChip, setSelectedChip] = useState("");
   const [chipAmount, setChipAmount] = useState("");
+
+  // Düzenleme Modalı State'leri
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
 
   const token = localStorage.getItem('wallet_token');
   const API_BASE = 'http://localhost:5139/api';
@@ -72,7 +77,7 @@ export default function Home() {
       const data = await res.json();
       if (pageNum === 1) setTransactions(data.items);
       else setTransactions(prev => [...prev, ...data.items]);
-      
+
       setHasMore(data.totalCount > pageNum * data.pageSize);
       setPage(pageNum);
     } catch (err) { console.error("Harcamalar çekilemedi:", err); }
@@ -85,8 +90,8 @@ export default function Home() {
         const data = await res.json();
         setCategories(data.categories || []);
         setMerchants(data.merchants || []);
-        setCountries(data.countries || []); // Backend'den gelmeli
-        setCurrencies(data.currencies || []); // Backend'den gelmeli
+        setCountries(data.countries || []);
+        setCurrencies(data.currencies || []);
       }
     } catch (err) { console.error("Filtre seçenekleri yüklenemedi:", err); }
   };
@@ -117,7 +122,7 @@ export default function Home() {
         setFilteredTransactions(data.items || []);
         setHasSearched(true);
       }
-    } catch (err) { console.error("Filtreleme hatası:", err); } 
+    } catch (err) { console.error("Filtreleme hatası:", err); }
     finally { setFilterLoading(false); }
   };
 
@@ -138,12 +143,12 @@ export default function Home() {
       });
       if (res.ok) {
         setInputText(""); setChipAmount(""); setIsModalOpen(false);
-        fetchDashboard(); fetchTransactions(1); 
-        if (hasSearched) handleFilterSearch(); 
+        fetchDashboard(); fetchTransactions(1);
+        if (hasSearched) handleFilterSearch();
       } else {
         const errData = await res.json(); alert("Hata: " + (errData.message || "Bilinmeyen hata"));
       }
-    } catch (err) { alert("Sunucuya bağlanılamadı."); } 
+    } catch (err) { alert("Sunucuya bağlanılamadı."); }
     finally { setLoading(false); }
   };
 
@@ -187,8 +192,95 @@ export default function Home() {
         const errData = await res.json();
         alert("Hata: " + (errData.message || "Ekleme başarısız."));
       }
-    } catch (err) { alert("Sunucuya bağlanılamadı."); } 
+    } catch (err) { alert("Sunucuya bağlanılamadı."); }
     finally { setManualLoading(false); }
+  };
+
+  // === SİLME (DELETE) İŞLEMİ ===
+  const handleDeleteTransaction = async (id) => {
+    const isConfirmed = window.confirm("Bu harcamayı silmek istediğinize emin misiniz?");
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/transactions/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        fetchDashboard();
+        fetchTransactions(1);
+        if (hasSearched) handleFilterSearch();
+      } else {
+        alert("Silme işlemi başarısız oldu.");
+      }
+    } catch (err) { alert("Sunucuya bağlanılamadı."); }
+  };
+
+  // === DÜZENLEME (EDIT) İŞLEMLERİ ===
+  const getLocalDatetimeForInput = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  };
+
+  const handleOpenEditModal = (t) => {
+    const cat = categories.find(c => c.name === t.categoryName);
+    const mer = merchants.find(m => m.name === t.merchantName);
+    const cou = countries.find(c => c.name === t.countryName);
+    const cur = currencies.find(c => c.symbol === t.currencySymbol);
+
+    setEditForm({
+      id: t.id,
+      amount: t.amount,
+      description: t.description || "",
+      categoryId: cat ? cat.id : "",
+      merchantId: mer ? mer.id : "",
+      countryId: cou ? cou.id : "",
+      currencyId: cur ? cur.id : "",
+      date: getLocalDatetimeForInput(t.date),
+      exchangeRate: t.exchangeRate || ""
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+
+    const emptyGuid = "00000000-0000-0000-0000-000000000000";
+
+    const payload = {
+      amount: parseFloat(editForm.amount),
+      description: editForm.description || "",
+      categoryId: editForm.categoryId || undefined,
+      merchantId: editForm.merchantId ? editForm.merchantId : emptyGuid,
+      countryId: editForm.countryId ? editForm.countryId : emptyGuid,
+      currencyId: editForm.currencyId ? editForm.currencyId : emptyGuid,
+      date: editForm.date ? new Date(editForm.date).toISOString() : undefined,
+      exchangeRate: editForm.exchangeRate ? parseFloat(editForm.exchangeRate) : undefined
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/transactions/${editForm.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        setIsEditModalOpen(false);
+        setEditForm(null);
+        fetchDashboard();
+        fetchTransactions(page);
+        if (hasSearched) handleFilterSearch();
+      } else {
+        const errData = await res.json();
+        alert("Güncelleme başarısız: " + (errData.message || "Bilinmeyen Hata"));
+      }
+    } catch (err) { alert("Sunucuya bağlanılamadı."); }
+    finally { setEditLoading(false); }
   };
 
   // Helpers
@@ -197,7 +289,7 @@ export default function Home() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 font-sans flex flex-col gap-8">
-      
+
       {/* QUICK CHIP MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
@@ -213,6 +305,74 @@ export default function Home() {
               </div>
               <button type="submit" disabled={loading || !chipAmount} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition shadow-md disabled:opacity-50">
                 {loading ? 'Ekleniyor...' : 'Kaydet'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DÜZENLEME MODALI */}
+      {isEditModalOpen && editForm && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl transform transition-all scale-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">✏️ Harcamayı Düzenle</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition">✕</button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Tutar *</label>
+                <input type="number" step="0.01" required value={editForm.amount} onChange={e => setEditForm({ ...editForm, amount: e.target.value })} className="p-3 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Kategori *</label>
+                <select required value={editForm.categoryId} onChange={e => setEditForm({ ...editForm, categoryId: e.target.value })} className="p-3 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
+                  <option value="">Seçiniz...</option>
+                  {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1 md:col-span-2">
+                <label className="text-xs font-bold text-gray-500 uppercase">Açıklama</label>
+                <input type="text" value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} className="p-3 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">İşyeri</label>
+                <select value={editForm.merchantId} onChange={e => setEditForm({ ...editForm, merchantId: e.target.value })} className="p-3 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
+                  <option value="">İsteğe Bağlı</option>
+                  {merchants.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Tarih</label>
+                <input type="datetime-local" value={editForm.date} onChange={e => setEditForm({ ...editForm, date: e.target.value })} className="p-3 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Ülke</label>
+                <select value={editForm.countryId} onChange={e => setEditForm({ ...editForm, countryId: e.target.value })} className="p-3 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
+                  <option value="">Varsayılan (TR)</option>
+                  {countries.map(c => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Döviz & Kur</label>
+                <div className="flex gap-2">
+                  <select value={editForm.currencyId} onChange={e => setEditForm({ ...editForm, currencyId: e.target.value })} className="w-1/2 p-3 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
+                    <option value="">Varsayılan (TRY)</option>
+                    {currencies.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
+                  </select>
+                  <input type="number" step="0.01" value={editForm.exchangeRate} onChange={e => setEditForm({ ...editForm, exchangeRate: e.target.value })} placeholder="Kur (1)" className="w-1/2 p-3 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
+                </div>
+              </div>
+
+              <button type="submit" disabled={editLoading} className="md:col-span-2 w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition shadow-md disabled:opacity-50">
+                {editLoading ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
               </button>
             </form>
           </div>
@@ -246,20 +406,30 @@ export default function Home() {
             </h2>
             <div className="flex-1 overflow-y-auto space-y-3 pr-2">
               {transactions.map((t) => (
-                <div key={t.id} className="p-3 rounded-2xl flex items-center justify-between hover:bg-gray-50 border border-transparent hover:border-gray-100 transition group">
+                <div key={t.id} className="p-3 rounded-2xl flex items-center justify-between hover:bg-gray-50 border border-transparent hover:border-gray-100 transition duration-200 group">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-xl shadow-sm">{t.categoryIcon}</div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-semibold text-gray-400 mb-0.5 uppercase tracking-wider">{formatDateTime(t.date)}</span>
                       <p className="font-semibold text-gray-800 text-sm capitalize">{t.description ? t.description : t.categoryName}</p>
                       <p className="text-xs text-gray-500">
-                        {t.categoryName} {t.merchantName ? `• ${t.merchantName}` : ''} {t.countryName && t.countryName !== 'TÜRKİYE' ? `• ${t.countryName}` : ''}
+                        {t.categoryName} {t.merchantName ? `• ${t.merchantName}` : ''} {t.countryName && t.countryName !== 'TÜRKİYE' && t.countryName !== 'Türkiye' ? `• ${t.countryName}` : ''}
                       </p>
                     </div>
                   </div>
-                  <div className="font-bold text-gray-900 group-hover:text-blue-600 transition text-right">
-                    {t.amount} {t.currencySymbol ? t.currencySymbol : '₺'}
-                    {t.exchangeRate && t.exchangeRate !== 1 && <div className="text-[9px] text-gray-400 font-normal mt-0.5">Kur: {t.exchangeRate}</div>}
+
+                  {/* SAĞ TARAF: TUTARIN ÜZERİNDE BELİREN MİNİ BUTONLAR (KAYMASIZ) */}
+                  <div className="relative flex flex-col items-end justify-center min-w-[70px]">
+                    {/* Absolute pozisyonla tutarın üzerine binen mini araç çubuğu */}
+                    <div className="absolute -top-4 right-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 backdrop-blur-sm shadow-sm rounded-md border border-gray-100 p-0.5 z-20 pointer-events-none group-hover:pointer-events-auto">
+                      <button onClick={() => handleOpenEditModal(t)} className="text-gray-400 hover:text-blue-600 p-1 text-[10px] leading-none rounded hover:bg-blue-50 transition" title="Düzenle">✏️</button>
+                      <button onClick={() => handleDeleteTransaction(t.id)} className="text-gray-400 hover:text-red-600 p-1 text-[10px] leading-none rounded hover:bg-red-50 transition" title="Sil">🗑️</button>
+                    </div>
+
+                    <div className="font-bold text-gray-900 text-right mt-3">
+                      {t.amount} {t.currencySymbol ? t.currencySymbol : '₺'}
+                      {t.exchangeRate && t.exchangeRate !== 1 && <div className="text-[9px] text-gray-400 font-normal mt-0.5">Kur: {t.exchangeRate}</div>}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -299,8 +469,8 @@ export default function Home() {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={dashboard.dailyTrend}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                      <XAxis dataKey="date" tickFormatter={formatChartDate} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#9ca3af'}} dy={10} />
-                      <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#9ca3af'}} dx={-10} />
+                      <XAxis dataKey="date" tickFormatter={formatChartDate} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} dx={-10} />
                       <Tooltip labelFormatter={formatChartDate} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                       <Line type="monotone" dataKey="amount" name="Tutar (₺)" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
                     </LineChart>
@@ -341,8 +511,8 @@ export default function Home() {
                       <BarChart data={dashboard.merchantDistribution.slice(0, 5)} layout="vertical" margin={{ left: 0, right: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f3f4f6" />
                         <XAxis type="number" hide />
-                        <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#6b7280'}} width={80} />
-                        <Tooltip cursor={{fill: '#f9fafb'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                        <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} width={80} />
+                        <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                         <Bar dataKey="value" name="Tutar (₺)" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -375,7 +545,7 @@ export default function Home() {
             <h4 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">Sorgu Sonuçları ({filteredTransactions.length} Eşleşme)</h4>
             <div className="max-h-[350px] overflow-y-auto space-y-2 pr-2">
               {filteredTransactions.map((t) => (
-                <div key={t.id} className="p-3 bg-gray-50 hover:bg-gray-100/70 rounded-xl flex items-center justify-between border border-gray-100/50 transition">
+                <div key={t.id} className="p-3 bg-gray-50 hover:bg-gray-100/70 rounded-xl flex items-center justify-between border border-gray-100/50 transition duration-200 group">
                   <div className="flex items-center gap-3">
                     <span className="text-xl bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-sm">{t.categoryIcon}</span>
                     <div>
@@ -385,10 +555,26 @@ export default function Home() {
                       </p>
                     </div>
                   </div>
-                  <div className="font-bold text-gray-800 text-sm text-right">
-                    {t.amount} {t.currencySymbol ? t.currencySymbol : '₺'}
-                    {t.exchangeRate && t.exchangeRate !== 1 && <div className="text-[10px] text-gray-400 font-normal mt-0.5">Kur: {t.exchangeRate}</div>}
+
+                  {/* SORGULAMA SONUÇLARI SAĞ TARAF: HAFİF SOLLU TUTAR VE SAĞINDA ÇIKAN BUTONLAR */}
+                  <div className="flex items-center justify-end w-[160px] gap-2">
+                    <div className="font-bold text-gray-800 text-sm text-right flex-1">
+                      {t.amount} {t.currencySymbol ? t.currencySymbol : '₺'}
+                      {t.exchangeRate && t.exchangeRate !== 1 && <div className="text-[10px] text-gray-400 font-normal mt-0.5">Kur: {t.exchangeRate}</div>}
+                    </div>
+
+                    {/* Butonlar için sabit alan ayırdık. Tutar bu yüzden hep hafif sollu durur. Layout kayması olmaz. */}
+                     {/* opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto */}
+                    <div className="w-[60px] flex items-center justify-end gap-1"> 
+                      <button onClick={() => handleOpenEditModal(t)} className="text-gray-400 hover:text-blue-600 bg-transparent hover:bg-blue-50 p-1.5 rounded-lg transition" title="Düzenle">
+                        ✏️
+                      </button>
+                      <button onClick={() => handleDeleteTransaction(t.id)} className="text-gray-400 hover:text-red-600 bg-transparent hover:bg-red-50 p-1.5 rounded-lg transition" title="Sil">
+                        🗑️
+                      </button>
+                    </div>
                   </div>
+
                 </div>
               ))}
               {filteredTransactions.length === 0 && <p className="text-gray-400 text-sm text-center py-6">Eşleşme bulunamadı.</p>}
@@ -401,15 +587,15 @@ export default function Home() {
       <div className="bg-white p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
         <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">✍️ Detaylı Harcama Ekle</h3>
         <form onSubmit={handleManualAdd} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          
+
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold text-gray-400 uppercase">Tutar *</label>
-            <input type="number" step="0.01" required value={manualForm.amount} onChange={e => setManualForm({...manualForm, amount: e.target.value})} placeholder="Örn: 1500" className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
+            <input type="number" step="0.01" required value={manualForm.amount} onChange={e => setManualForm({ ...manualForm, amount: e.target.value })} placeholder="Örn: 1500" className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
           </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold text-gray-400 uppercase">Kategori *</label>
-            <select required value={manualForm.categoryId} onChange={e => setManualForm({...manualForm, categoryId: e.target.value})} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
+            <select required value={manualForm.categoryId} onChange={e => setManualForm({ ...manualForm, categoryId: e.target.value })} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
               <option value="">Seçiniz...</option>
               {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
             </select>
@@ -417,12 +603,12 @@ export default function Home() {
 
           <div className="flex flex-col gap-1 lg:col-span-2">
             <label className="text-[10px] font-bold text-gray-400 uppercase">Açıklama</label>
-            <input type="text" value={manualForm.description} onChange={e => setManualForm({...manualForm, description: e.target.value})} placeholder="Örn: Prag akşam yemeği..." className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
+            <input type="text" value={manualForm.description} onChange={e => setManualForm({ ...manualForm, description: e.target.value })} placeholder="Örn: Prag akşam yemeği..." className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
           </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold text-gray-400 uppercase">İşyeri</label>
-            <select value={manualForm.merchantId} onChange={e => setManualForm({...manualForm, merchantId: e.target.value})} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
+            <select value={manualForm.merchantId} onChange={e => setManualForm({ ...manualForm, merchantId: e.target.value })} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
               <option value="">İsteğe Bağlı</option>
               {merchants.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
@@ -430,17 +616,17 @@ export default function Home() {
 
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold text-gray-400 uppercase">Tarih</label>
-            <input type="datetime-local" value={manualForm.date} onChange={e => setManualForm({...manualForm, date: e.target.value})} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
+            <input type="datetime-local" value={manualForm.date} onChange={e => setManualForm({ ...manualForm, date: e.target.value })} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
           </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold text-gray-400 uppercase">Ülke & Döviz (Boş: TR/TRY)</label>
             <div className="flex gap-2">
-              <select value={manualForm.countryId} onChange={e => setManualForm({...manualForm, countryId: e.target.value})} className="w-1/2 p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
+              <select value={manualForm.countryId} onChange={e => setManualForm({ ...manualForm, countryId: e.target.value })} className="w-1/2 p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
                 <option value="">Ülke</option>
                 {countries.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
               </select>
-              <select value={manualForm.currencyId} onChange={e => setManualForm({...manualForm, currencyId: e.target.value})} className="w-1/2 p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
+              <select value={manualForm.currencyId} onChange={e => setManualForm({ ...manualForm, currencyId: e.target.value })} className="w-1/2 p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
                 <option value="">Döviz</option>
                 {currencies.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
               </select>
@@ -450,7 +636,7 @@ export default function Home() {
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold text-gray-400 uppercase">Kur (Exchange Rate)</label>
             <div className="flex gap-2">
-              <input type="number" step="0.01" value={manualForm.exchangeRate} onChange={e => setManualForm({...manualForm, exchangeRate: e.target.value})} placeholder="Örn: 35.5" className="w-2/3 p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
+              <input type="number" step="0.01" value={manualForm.exchangeRate} onChange={e => setManualForm({ ...manualForm, exchangeRate: e.target.value })} placeholder="Örn: 35.5" className="w-2/3 p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
               <button type="submit" disabled={manualLoading} className="w-1/3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-2.5 rounded-xl transition shadow-sm disabled:opacity-50">
                 {manualLoading ? '...' : 'Ekle'}
               </button>
