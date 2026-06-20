@@ -54,7 +54,7 @@ export default function Home() {
   const [editLoading, setEditLoading] = useState(false);
 
   const token = localStorage.getItem('wallet_token');
-  const API_BASE = 'http://localhost:5139/api';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // === DATA FETCHING ===
   const fetchDashboard = async () => {
@@ -411,7 +411,9 @@ export default function Home() {
                     <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-xl shadow-sm">{t.categoryIcon}</div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-semibold text-gray-400 mb-0.5 uppercase tracking-wider">{formatDateTime(t.date)}</span>
-                      <p className="font-semibold text-gray-800 text-sm capitalize">{t.description ? t.description : t.categoryName}</p>
+                      <p className="font-semibold text-gray-800 text-sm capitalize">
+                        {(t.description || t.merchantName || t.categoryName || "").toLocaleLowerCase('tr-TR')}
+                      </p>
                       <p className="text-xs text-gray-500">
                         {t.categoryName} {t.merchantName ? `• ${t.merchantName}` : ''} {t.countryName && t.countryName !== 'TÜRKİYE' && t.countryName !== 'Türkiye' ? `• ${t.countryName}` : ''}
                       </p>
@@ -549,7 +551,9 @@ export default function Home() {
                   <div className="flex items-center gap-3">
                     <span className="text-xl bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-sm">{t.categoryIcon}</span>
                     <div>
-                      <p className="font-semibold text-gray-800 text-sm capitalize">{t.description}</p>
+                      <p className="font-semibold text-gray-800 text-sm capitalize">
+                        {(t.description || t.merchantName || t.categoryName || "").toLocaleLowerCase('tr-TR')}
+                      </p>
                       <p className="text-[11px] text-gray-400 font-medium">
                         {formatDateTime(t.date)} • <span className="text-gray-500">{t.categoryName}</span> {t.merchantName ? `• ${t.merchantName}` : ''} {t.countryName && t.countryName !== 'Türkiye' ? `• ${t.countryName}` : ''}
                       </p>

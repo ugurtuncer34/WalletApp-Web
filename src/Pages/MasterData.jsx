@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE = 'http://localhost:5139/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export default function MasterData() {
   const [data, setData] = useState(null);

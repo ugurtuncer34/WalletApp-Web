@@ -1,13 +1,29 @@
-import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
 import Home from './Pages/Home';
 import MasterData from './Pages/MasterData';
-import Login from './Pages/Login'; // Yeni sayfamızı import ettik
+import Login from './Pages/Login';
 
-// Çıkış butonu işlemi için yardımcı bileşen
+// JWT Token'ın içini açıp Rolü okuyan fonksiyonumuz
+const getUserRole = () => {
+  const token = localStorage.getItem('wallet_token');
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    // .NET'in varsayılan Rol anahtarı uzun ve çirkindir, oradan yakalıyoruz:
+    return payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || payload.role;
+  } catch {
+    return null; // Token bozuksa null dön
+  }
+};
+
 function Navbar() {
   const navigate = useNavigate();
   const token = localStorage.getItem('wallet_token');
   const user = localStorage.getItem('wallet_user');
+
+  // Rolü Navbar render olurken alıyoruz
+  const role = getUserRole();
+  const isAdmin = role === "Admin";
 
   const handleLogout = () => {
     localStorage.removeItem('wallet_token');
@@ -15,7 +31,6 @@ function Navbar() {
     navigate('/login');
   };
 
-  // Eğer giriş yapılmamışsa menüyü gösterme
   if (!token) return null;
 
   return (
@@ -26,7 +41,13 @@ function Navbar() {
         </Link>
         <div className="flex gap-4 items-center">
           <Link to="/" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition">Ana Sayfa</Link>
-          <Link to="/master-data" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition">Röntgen</Link>
+
+          {isAdmin && (
+            <Link to="/master-data" className="text-sm font-medium text-purple-600 hover:text-purple-800 transition">
+              Röntgen 🛡️
+            </Link>
+          )}
+
           <div className="w-px h-4 bg-gray-300 mx-1"></div>
           <span className="text-sm text-gray-400">👋 {user}</span>
           <button onClick={handleLogout} className="text-sm font-medium text-red-500 hover:text-red-700 transition">
@@ -38,6 +59,12 @@ function Navbar() {
   );
 }
 
+// Router Koruyucu Bileşen
+const AdminRoute = ({ children }) => {
+  const role = getUserRole();
+  return role === "Admin" ? children : <Navigate to="/" />;
+};
+
 function App() {
   return (
     <BrowserRouter>
@@ -45,7 +72,16 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Home />} />
-        <Route path="/master-data" element={<MasterData />} />
+
+        {/* Admin rolü gerekli */}
+        <Route
+          path="/master-data"
+          element={
+            <AdminRoute>
+              <MasterData />
+            </AdminRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
