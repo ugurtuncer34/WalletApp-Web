@@ -5,7 +5,7 @@ const toTitleCase = (str) => {
     return str.toLocaleLowerCase('tr-TR').replace(/(?:^|\s)\S/g, (a) => a.toLocaleUpperCase('tr-TR'));
   };
 
-const CategorySelect = ({ options, value, onChange, placeholder }) => {
+const CategorySelect = ({ options, value, onChange, placeholder, disableParents = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef(null);
 
@@ -47,22 +47,29 @@ const CategorySelect = ({ options, value, onChange, placeholder }) => {
             Tümü (Seçimi Temizle)
           </div>
           <div className="p-1 space-y-0.5">
-            {options.map(c => (
+            {options.map(c => {
+                const isDisabled = disableParents && c.isParent;
+                
+                return (
               <div
                 key={c.id}
-                className={`p-2.5 text-sm cursor-pointer rounded-lg transition flex items-center gap-2 ${
-                  c.isParent 
+                className={`p-2.5 text-sm cursor-pointer rounded-lg transition flex items-center gap-2 
+                ${c.isParent 
                     ? 'font-bold text-gray-900 bg-gray-50 mt-1' 
-                    : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700 ml-4'
-                }`}
-                onClick={() => { onChange(c.id); setIsOpen(false); }}
+                    : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700 ml-4'}
+                ${isDisabled 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'cursor-pointer hover:bg-blue-50 hover:text-blue-700 text-gray-600'}`}
+                onClick={() => { 
+                    if (!isDisabled) { onChange(c.id); setIsOpen(false); }
+                }}
               >
                 {/* Ağaç simgeleri sadece liste açıkken görünür */}
                 <span className="opacity-60 text-xs">{c.isParent ? '📁' : '↳'}</span>
                 <span>{c.icon}</span>
                 <span>{toTitleCase(c.name)}</span>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       )}
