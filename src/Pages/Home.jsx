@@ -49,6 +49,10 @@ export default function Home() {
   const [countries, setCountries] = useState([]);
   const [currencies, setCurrencies] = useState([]);
 
+  // Dashboard Filtre State'leri
+  const [dashboardMonth, setDashboardMonth] = useState(new Date().getMonth() + 1); // JS'de aylar 0'dan başlar, o yüzden +1
+  const [dashboardYear, setDashboardYear] = useState(new Date().getFullYear());
+
   // Filtreli Arama State'leri
   const [filterCategoryId, setFilterCategoryId] = useState("");
   const [filterMerchantId, setFilterMerchantId] = useState("");
@@ -80,9 +84,11 @@ export default function Home() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // === DATA FETCHING ===
-  const fetchDashboard = async () => {
+  const fetchDashboard = async (m = dashboardMonth, y = dashboardYear) => {
     try {
-      const res = await fetch(`${API_BASE}/dashboard`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE}/dashboard?month=${m}&year=${y}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) setDashboard(await res.json());
     } catch (err) { console.error("Dashboard çekilemedi:", err); }
   };
@@ -121,10 +127,10 @@ export default function Home() {
 
   useEffect(() => {
     if (!token) { navigate('/login'); return; }
-    fetchDashboard();
+    fetchDashboard(dashboardMonth, dashboardYear);
     fetchTransactions(1);
     fetchFilterOptions();
-  }, [token, navigate]);
+  }, [token, navigate, dashboardMonth, dashboardYear]);
 
   // === SEARCH & FILTER ===
   const handleFilterSearch = async (e) => {
@@ -326,9 +332,8 @@ export default function Home() {
     return merchants.filter(m => m.defaultCategory && validCategoryIds.includes(m.defaultCategory.id));
   };
 
-
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-6 font-sans flex flex-col gap-8">
+    <div className="max-w-7xl mx-auto px-4 md:px-6 pt-2 lg:pt-4 pb-8 font-sans flex flex-col gap-4 lg:gap-6">
 
       {/* QUICK CHIP MODAL */}
       {isModalOpen && (
@@ -425,8 +430,9 @@ export default function Home() {
       )}
 
       {/* ÜST GRİD: OPERASYON VE GRAFİKLER */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* SOL KOLON */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
+        
+        {/* SOL KOLON (Akıllı Giriş, Çipler, Canlı Akış) */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           <div className="bg-white p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
             <h2 className="text-gray-800 font-bold mb-4">Akıllı Giriş</h2>
@@ -444,18 +450,14 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 flex flex-col h-[650px]">
+          <div className="bg-white p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 flex flex-col h-[400px] xl:h-[550px]">
             <h2 className="text-gray-800 font-bold mb-4 flex justify-between items-center">
               <span>Son İşlemler (Canlı Akış)</span>
               <span className="text-xs font-normal text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{transactions.length}</span>
             </h2>
             <div className="flex-1 overflow-y-auto space-y-3 pr-2">
               {transactions.map((t) => {
-                // MASTER DATA'DAN KATEGORİYİ BUL (Ana kategori ismini çekmek için)
                 const catObj = categories.find(c => c.name === t.categoryName);
-
-                // ALT BAŞLIK SOL KISIM (Parent varsa onu al, yoksa kendi adını al)
-                // Örn: catObj.parentCategory.name "KİŞİSEL & SAĞLIK" ise onu alır.
                 const subtitleCategory = catObj?.parentCategory?.name || t.categoryName;
 
                 return (
@@ -468,14 +470,9 @@ export default function Home() {
                         <span className="text-[10px] font-semibold text-gray-400 mb-0.5 uppercase tracking-wider">
                           {formatDateTime(t.date)}
                         </span>
-
-                        {/* KALIN BAŞLIK: Açıklama varsa Açıklama, yoksa Kategori Adı (Örn: Psikiyatri) */}
-                        {/* (Büyük/Küçük harf mantığı toLocaleLowerCase ve capitalize ile sağlandı) */}
                         <p className="font-semibold text-gray-800 text-sm capitalize">
                           {(t.description || t.categoryName || "").toLocaleLowerCase('tr-TR')}
                         </p>
-
-                        {/* GRİ ALT BAŞLIK: KİŞİSEL & SAĞLIK • CANDAŞ • TR */}
                         <p className="text-xs text-gray-500 uppercase tracking-wide mt-0.5 text-[10px]">
                           {subtitleCategory}
                           {t.merchantName ? ` • ${t.merchantName}` : ''}
@@ -484,14 +481,11 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* SAĞ TARAF: TUTARIN ÜZERİNDE BELİREN MİNİ BUTONLAR (KAYMASIZ) */}
                     <div className="relative flex flex-col items-end justify-center min-w-[70px]">
-                      {/* Absolute pozisyonla tutarın üzerine binen mini araç çubuğu */}
                       <div className="absolute -top-4 right-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 backdrop-blur-sm shadow-sm rounded-md border border-gray-100 p-0.5 z-20 pointer-events-none group-hover:pointer-events-auto">
                         <button onClick={() => handleOpenEditModal(t)} className="text-gray-400 hover:text-blue-600 p-1 text-[10px] leading-none rounded hover:bg-blue-50 transition" title="Düzenle">✏️</button>
                         <button onClick={() => handleDeleteTransaction(t.id)} className="text-gray-400 hover:text-red-600 p-1 text-[10px] leading-none rounded hover:bg-red-50 transition" title="Sil">🗑️</button>
                       </div>
-
                       <div className="font-bold text-gray-900 text-right mt-3">
                         {t.amount} {t.currencySymbol ? t.currencySymbol : '₺'}
                         {t.exchangeRate && t.exchangeRate !== 1 && <div className="text-[9px] text-gray-400 font-normal mt-0.5">Kur: {t.exchangeRate}</div>}
@@ -510,236 +504,279 @@ export default function Home() {
           </div>
         </div>
 
-        {/* SAĞ KOLON: RAPORLAR VE GRAFİKLER */}
-        {dashboard && (
-          <div className="lg:col-span-8 flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-3xl shadow-lg text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-20 text-6xl">💸</div>
-                <h3 className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-2 relative z-10">Bu Ayki Toplam Harcama</h3>
-                <p className="text-4xl font-black relative z-10">{dashboard.totalMonthlyExpense?.toLocaleString('tr-TR')} <span className="text-xl">₺</span></p>
-              </div>
-              <div className="bg-white p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 flex flex-col justify-center">
-                <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Zirve Kategori</h3>
-                <p className="text-2xl font-bold text-gray-800 truncate">{dashboard.categoryDistribution?.length > 0 ? dashboard.categoryDistribution[0].label : '-'}</p>
-              </div>
-              <div className="bg-white p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 flex flex-col justify-center">
-                <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Sık Gidilen İşyeri</h3>
-                <p className="text-2xl font-bold text-gray-800 truncate">{dashboard.merchantDistribution?.length > 0 ? dashboard.merchantDistribution[0].label : '-'}</p>
-              </div>
-            </div>
+        {/* SAĞ KOLON (Dashboard) */}
+        <div className="lg:col-span-8 flex flex-col gap-4">
 
-            <div className="bg-white p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
-              <h3 className="text-gray-800 font-bold mb-6">Günlük Harcama Trendi</h3>
-              <div className="h-[300px] w-full">
-                {dashboard.dailyTrend?.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={dashboard.dailyTrend}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                      <XAxis dataKey="date" tickFormatter={formatChartDate} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} dy={10} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} dx={-10} />
-                      <Tooltip labelFormatter={formatChartDate} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                      <Line type="monotone" dataKey="amount" name="Tutar (₺)" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : <div className="h-full flex items-center justify-center text-gray-400 text-sm">Veri yok.</div>}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 flex flex-col">
-                <h3 className="text-gray-800 font-bold mb-4">Kategori Dağılımı</h3>
-                <div className="flex-1 h-[300px]">
-                  {dashboard.categoryDistribution?.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={dashboard.categoryDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" nameKey="label" stroke="none">
-                          {dashboard.categoryDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip formatter={(value, name) => [`${value} ₺`, name]} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : <div className="h-full flex items-center justify-center text-gray-400 text-sm">Veri yok.</div>}
-                </div>
-                <div className="flex flex-wrap justify-center gap-3 mt-4">
-                  {dashboard.categoryDistribution?.slice(0, 5).map((entry, index) => (
-                    <div key={index} className="flex items-center gap-1.5 text-xs text-gray-600">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>{entry.label}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
-                <h3 className="text-gray-800 font-bold mb-4">Sık Kullanılan İşyerleri</h3>
-                <div className="h-[300px]">
-                  {dashboard.merchantDistribution?.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dashboard.merchantDistribution.slice(0, 5)} layout="vertical" margin={{ left: 0, right: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f3f4f6" />
-                        <XAxis type="number" hide />
-                        <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} width={80} />
-                        <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                        <Bar dataKey="value" name="Tutar (₺)" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : <div className="h-full flex items-center justify-center text-gray-400 text-sm">Veri yok.</div>}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* GELİŞMİŞ FİLTRELİ SORGULAMA */}
-      <div className="bg-white p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
-        <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">🔍 Gelişmiş Harcama Arama</h3>
-        <form onSubmit={handleFilterSearch} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 items-end">
-          <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Başlangıç</label><input type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" /></div>
-          <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Bitiş</label><input type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" /></div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Kategori</label>
-            <CategorySelect
-              options={groupedCategories}
-              value={filterCategoryId}
-              onChange={setFilterCategoryId}
-              placeholder="Tümü"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">İşyeri</label>
-            <SearchableSelect
-              options={getFilteredMerchants(filterCategoryId)}
-              value={filterMerchantId}
-              onChange={setFilterMerchantId}
-              placeholder="Tümü"
-              emptyLabel="Tümü (Seçimi Temizle)"
-            />
-          </div>
-          <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Ülke</label><select value={filterCountryId} onChange={(e) => setFilterCountryId(e.target.value)} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition"><option value="">Tümü</option>{countries.map(c => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}</select></div>
-          <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Döviz</label><select value={filterCurrencyId} onChange={(e) => setFilterCurrencyId(e.target.value)} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition"><option value="">Tümü</option>{currencies.map(c => <option key={c.id} value={c.id}>{c.code} ({c.symbol})</option>)}</select></div>
-          <div className="flex gap-2">
-            <button type="submit" disabled={filterLoading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-xl transition shadow-sm disabled:opacity-50">{filterLoading ? 'Sorgulanıyor...' : 'Sorgula'}</button>
-            {hasSearched && <button type="button" onClick={handleClearFilter} className="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-sm py-3 rounded-xl transition" title="Temizle">✕</button>}
-          </div>
-        </form>
-
-        {hasSearched && (
-          <div className="mt-6 pt-6 border-t border-gray-100 animate-fadeIn">
-            <h4 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">Sorgu Sonuçları ({filteredTransactions.length} Eşleşme)</h4>
-            <div className="max-h-[350px] overflow-y-auto space-y-2 pr-2">
-              {filteredTransactions.map((t) => (
-                <div key={t.id} className="p-3 bg-gray-50 hover:bg-gray-100/70 rounded-xl flex items-center justify-between border border-gray-100/50 transition duration-200 group">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-sm">{t.categoryIcon}</span>
-                    <div>
-                      <p className="font-semibold text-gray-800 text-sm capitalize">
-                        {(t.description || t.merchantName || t.categoryName || "").toLocaleLowerCase('tr-TR')}
-                      </p>
-                      <p className="text-[11px] text-gray-400 font-medium">
-                        {formatDateTime(t.date)} • <span className="text-gray-500">{t.categoryName}</span> {t.merchantName ? `• ${t.merchantName}` : ''} {t.countryName && t.countryName !== 'Türkiye' ? `• ${t.countryName}` : ''}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* SORGULAMA SONUÇLARI SAĞ TARAF: HAFİF SOLLU TUTAR VE SAĞINDA ÇIKAN BUTONLAR */}
-                  <div className="flex items-center justify-end w-[160px] gap-2">
-                    <div className="font-bold text-gray-800 text-sm text-right flex-1">
-                      {t.amount} {t.currencySymbol ? t.currencySymbol : '₺'}
-                      {t.exchangeRate && t.exchangeRate !== 1 && <div className="text-[10px] text-gray-400 font-normal mt-0.5">Kur: {t.exchangeRate}</div>}
-                    </div>
-
-                    {/* Butonlar için sabit alan ayırdık. Tutar bu yüzden hep hafif sollu durur. Layout kayması olmaz. */}
-                    {/* opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto */}
-                    <div className="w-[60px] flex items-center justify-end gap-1">
-                      <button onClick={() => handleOpenEditModal(t)} className="text-gray-400 hover:text-blue-600 bg-transparent hover:bg-blue-50 p-1.5 rounded-lg transition" title="Düzenle">
-                        ✏️
-                      </button>
-                      <button onClick={() => handleDeleteTransaction(t.id)} className="text-gray-400 hover:text-red-600 bg-transparent hover:bg-red-50 p-1.5 rounded-lg transition" title="Sil">
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-
-                </div>
-              ))}
-              {filteredTransactions.length === 0 && <p className="text-gray-400 text-sm text-center py-6">Eşleşme bulunamadı.</p>}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* MANUEL HARCAMA EKLEME FORMU */}
-      <div className="bg-white p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
-        <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">✍️ Detaylı Harcama Ekle</h3>
-        <form onSubmit={handleManualAdd} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Tutar *</label>
-            <input type="number" step="0.01" required value={manualForm.amount} onChange={e => setManualForm({ ...manualForm, amount: e.target.value })} placeholder="Örn: 1500" className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Kategori *</label>
-            <CategorySelect
-              options={groupedCategories}
-              value={manualForm.categoryId}
-              onChange={(val) => setManualForm({ ...manualForm, categoryId: val })}
-              placeholder="Seçiniz..."
-              disableParents={true}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1 lg:col-span-2">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Açıklama</label>
-            <input type="text" value={manualForm.description} onChange={e => setManualForm({ ...manualForm, description: e.target.value })} placeholder="Örn: Prag akşam yemeği..." className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">İşyeri</label>
-            <SearchableSelect
-              options={manualForm.categoryId
-                ? merchants.filter(m => m.defaultCategory?.id === manualForm.categoryId)
-                : merchants}
-              value={manualForm.merchantId}
-              onChange={(val) => setManualForm({ ...manualForm, merchantId: val })}
-              placeholder="İsteğe Bağlı"
-              emptyLabel="Boş Bırak"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Tarih</label>
-            <input type="datetime-local" value={manualForm.date} onChange={e => setManualForm({ ...manualForm, date: e.target.value })} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Ülke & Döviz (Boş: TR/TRY)</label>
-            <div className="flex gap-2">
-              <select value={manualForm.countryId} onChange={e => setManualForm({ ...manualForm, countryId: e.target.value })} className="w-1/2 p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
-                <option value="">Ülke</option>
-                {countries.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
+          {/* DASHBOARD BAŞLIK VE FİLTRE BAR */}
+          <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 gap-4">
+            <h3 className="text-gray-800 font-bold flex items-center gap-2">
+              📊 Finansal Özet
+            </h3>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <select
+                value={dashboardMonth}
+                onChange={(e) => setDashboardMonth(Number(e.target.value))}
+                className="flex-1 sm:w-32 p-2.5 bg-gray-50 text-sm font-semibold text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition cursor-pointer"
+              >
+                <option value={1}>Ocak</option>
+                <option value={2}>Şubat</option>
+                <option value={3}>Mart</option>
+                <option value={4}>Nisan</option>
+                <option value={5}>Mayıs</option>
+                <option value={6}>Haziran</option>
+                <option value={7}>Temmuz</option>
+                <option value={8}>Ağustos</option>
+                <option value={9}>Eylül</option>
+                <option value={10}>Ekim</option>
+                <option value={11}>Kasım</option>
+                <option value={12}>Aralık</option>
               </select>
-              <select value={manualForm.currencyId} onChange={e => setManualForm({ ...manualForm, currencyId: e.target.value })} className="w-1/2 p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
-                <option value="">Döviz</option>
-                {currencies.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
+
+              <select
+                value={dashboardYear}
+                onChange={(e) => setDashboardYear(Number(e.target.value))}
+                className="flex-1 sm:w-28 p-2.5 bg-gray-50 text-sm font-semibold text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition cursor-pointer"
+              >
+                <option value={2024}>2024</option>
+                <option value={2025}>2025</option>
+                <option value={2026}>2026</option>
+                <option value={2027}>2027</option>
               </select>
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Kur (Exchange Rate)</label>
-            <div className="flex gap-2">
-              <input type="number" step="0.01" value={manualForm.exchangeRate} onChange={e => setManualForm({ ...manualForm, exchangeRate: e.target.value })} placeholder="Örn: 35.5" className="w-2/3 p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
-              <button type="submit" disabled={manualLoading} className="w-1/3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-2.5 rounded-xl transition shadow-sm disabled:opacity-50">
-                {manualLoading ? '...' : 'Ekle'}
-              </button>
-            </div>
-          </div>
+          {/* DASHBOARD GRAFİKLERİ */}
+          {dashboard && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-3xl shadow-lg text-white relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-20 text-6xl">💸</div>
+                  <h3 className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-2 relative z-10">Bu Ayki Toplam Harcama</h3>
+                  <p className="text-3xl font-black relative z-10">{dashboard.totalMonthlyExpense?.toLocaleString('tr-TR')} <span className="text-lg">₺</span></p>
+                </div>
+                <div className="bg-white p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 flex flex-col justify-center">
+                  <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Zirve Kategori</h3>
+                  <p className="text-xl font-bold text-gray-800 truncate">{dashboard.categoryDistribution?.length > 0 ? dashboard.categoryDistribution[0].label : '-'}</p>
+                </div>
+                <div className="bg-white p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 flex flex-col justify-center">
+                  <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Sık Gidilen İşyeri</h3>
+                  <p className="text-xl font-bold text-gray-800 truncate">{dashboard.merchantDistribution?.length > 0 ? dashboard.merchantDistribution[0].label : '-'}</p>
+                </div>
+              </div>
 
-        </form>
+              <div className="bg-white p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
+                <h3 className="text-gray-800 font-bold mb-6">Günlük Harcama Trendi</h3>
+                <div className="h-[240px] w-full">
+                  {dashboard.dailyTrend?.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={dashboard.dailyTrend}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                        <XAxis dataKey="date" tickFormatter={formatChartDate} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} dx={-10} />
+                        <Tooltip labelFormatter={formatChartDate} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                        <Line type="monotone" dataKey="amount" name="Tutar (₺)" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : <div className="h-full flex items-center justify-center text-gray-400 text-sm">Veri yok.</div>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 flex flex-col">
+                  <h3 className="text-gray-800 font-bold mb-4">Kategori Dağılımı</h3>
+                  <div className="flex-1 h-[240px]">
+                    {dashboard.categoryDistribution?.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={dashboard.categoryDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" nameKey="label" stroke="none">
+                            {dashboard.categoryDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                          </Pie>
+                          <Tooltip formatter={(value, name) => [`${value} ₺`, name]} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : <div className="h-full flex items-center justify-center text-gray-400 text-sm">Veri yok.</div>}
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-3 mt-4">
+                    {dashboard.categoryDistribution?.slice(0, 5).map((entry, index) => (
+                      <div key={index} className="flex items-center gap-1.5 text-xs text-gray-600">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>{entry.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
+                  <h3 className="text-gray-800 font-bold mb-4">Sık Kullanılan İşyerleri</h3>
+                  <div className="h-[240px]">
+                    {dashboard.merchantDistribution?.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={dashboard.merchantDistribution.slice(0, 5)} layout="vertical" margin={{ left: 0, right: 20 }}>
+                          <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f3f4f6" />
+                          <XAxis type="number" hide />
+                          <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} width={80} />
+                          <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                          <Bar dataKey="value" name="Tutar (₺)" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : <div className="h-full flex items-center justify-center text-gray-400 text-sm">Veri yok.</div>}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+        </div>
       </div>
 
+      {/* ALT GRİD: FİLTRE VE MANUEL EKLEME */}
+      <div className="grid grid-cols-1 gap-8 mt-4">
+        
+        {/* GELİŞMİŞ FİLTRELİ SORGULAMA */}
+        <div className="bg-white p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
+          <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">🔍 Gelişmiş Harcama Arama</h3>
+          <form onSubmit={handleFilterSearch} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-end">
+            <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Başlangıç</label><input type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="p-2 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" /></div>
+            <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Bitiş</label><input type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="p-2 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" /></div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Kategori</label>
+              <CategorySelect
+                options={groupedCategories}
+                value={filterCategoryId}
+                onChange={setFilterCategoryId}
+                placeholder="Tümü"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">İşyeri</label>
+              <SearchableSelect
+                options={getFilteredMerchants(filterCategoryId)}
+                value={filterMerchantId}
+                onChange={setFilterMerchantId}
+                placeholder="Tümü"
+                emptyLabel="Tümü (Seçimi Temizle)"
+              />
+            </div>
+            <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Ülke</label><select value={filterCountryId} onChange={(e) => setFilterCountryId(e.target.value)} className="p-2 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition"><option value="">Tümü</option>{countries.map(c => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}</select></div>
+            <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Döviz</label><select value={filterCurrencyId} onChange={(e) => setFilterCurrencyId(e.target.value)} className="p-2 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition"><option value="">Tümü</option>{currencies.map(c => <option key={c.id} value={c.id}>{c.code} ({c.symbol})</option>)}</select></div>
+            <div className="flex gap-2">
+              <button type="submit" disabled={filterLoading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-xl transition shadow-sm disabled:opacity-50">{filterLoading ? 'Sorgulanıyor...' : 'Sorgula'}</button>
+              {hasSearched && <button type="button" onClick={handleClearFilter} className="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-sm py-3 rounded-xl transition" title="Temizle">✕</button>}
+            </div>
+          </form>
+
+          {hasSearched && (
+            <div className="mt-6 pt-6 border-t border-gray-100 animate-fadeIn">
+              <h4 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">Sorgu Sonuçları ({filteredTransactions.length} Eşleşme)</h4>
+              <div className="max-h-[350px] overflow-y-auto space-y-2 pr-2">
+                {filteredTransactions.map((t) => {
+                  const catObj = categories.find(c => c.name === t.categoryName);
+                  const subtitleCategory = catObj?.parentCategory?.name || t.categoryName;
+                  
+                  return (
+                    <div key={t.id} className="p-3 bg-gray-50 hover:bg-gray-100/70 rounded-xl flex items-center justify-between border border-gray-100/50 transition duration-200 group">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-sm">{t.categoryIcon}</span>
+                        <div>
+                          <p className="font-semibold text-gray-800 text-sm capitalize">
+                            {(t.description || t.categoryName || "").toLocaleLowerCase('tr-TR')}
+                          </p>
+                          <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">
+                            {formatDateTime(t.date)} • <span className="text-gray-500">{subtitleCategory}</span> {t.merchantName ? `• ${t.merchantName}` : ''} {t.countryName && t.countryName !== 'Türkiye' && t.countryName !== 'TÜRKİYE' ? `• ${t.countryName}` : ''}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end w-[160px] gap-2">
+                        <div className="font-bold text-gray-800 text-sm text-right flex-1">
+                          {t.amount} {t.currencySymbol ? t.currencySymbol : '₺'}
+                          {t.exchangeRate && t.exchangeRate !== 1 && <div className="text-[10px] text-gray-400 font-normal mt-0.5">Kur: {t.exchangeRate}</div>}
+                        </div>
+                        <div className="w-[60px] flex items-center justify-end gap-1">
+                          <button onClick={() => handleOpenEditModal(t)} className="text-gray-400 hover:text-blue-600 bg-transparent hover:bg-blue-50 p-1.5 rounded-lg transition" title="Düzenle">✏️</button>
+                          <button onClick={() => handleDeleteTransaction(t.id)} className="text-gray-400 hover:text-red-600 bg-transparent hover:bg-red-50 p-1.5 rounded-lg transition" title="Sil">🗑️</button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {filteredTransactions.length === 0 && <p className="text-gray-400 text-sm text-center py-6">Eşleşme bulunamadı.</p>}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* MANUEL HARCAMA EKLEME FORMU */}
+        <div className="bg-white p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 mb-8">
+          <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">✍️ Detaylı Harcama Ekle</h3>
+          <form onSubmit={handleManualAdd} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Tutar *</label>
+              <input type="number" step="0.01" required value={manualForm.amount} onChange={e => setManualForm({ ...manualForm, amount: e.target.value })} placeholder="Örn: 1500" className="p-2 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Kategori *</label>
+              <CategorySelect
+                options={groupedCategories}
+                value={manualForm.categoryId}
+                onChange={(val) => setManualForm({ ...manualForm, categoryId: val })}
+                placeholder="Seçiniz..."
+                disableParents={true}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1 lg:col-span-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Açıklama</label>
+              <input type="text" value={manualForm.description} onChange={e => setManualForm({ ...manualForm, description: e.target.value })} placeholder="Örn: Prag akşam yemeği..." className="p-2 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">İşyeri</label>
+              <SearchableSelect
+                options={manualForm.categoryId
+                  ? merchants.filter(m => m.defaultCategory?.id === manualForm.categoryId)
+                  : merchants}
+                value={manualForm.merchantId}
+                onChange={(val) => setManualForm({ ...manualForm, merchantId: val })}
+                placeholder="İsteğe Bağlı"
+                emptyLabel="Boş Bırak"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Tarih</label>
+              <input type="datetime-local" value={manualForm.date} onChange={e => setManualForm({ ...manualForm, date: e.target.value })} className="p-2 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Ülke & Döviz (Boş: TR/TRY)</label>
+              <div className="flex gap-2">
+                <select value={manualForm.countryId} onChange={e => setManualForm({ ...manualForm, countryId: e.target.value })} className="w-1/2 p-2 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
+                  <option value="">Ülke</option>
+                  {countries.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
+                </select>
+                <select value={manualForm.currencyId} onChange={e => setManualForm({ ...manualForm, currencyId: e.target.value })} className="w-1/2 p-2 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
+                  <option value="">Döviz</option>
+                  {currencies.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Kur (Exchange Rate)</label>
+              <div className="flex gap-2">
+                <input type="number" step="0.01" value={manualForm.exchangeRate} onChange={e => setManualForm({ ...manualForm, exchangeRate: e.target.value })} placeholder="Örn: 35.5" className="w-2/3 p-2 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" />
+                <button type="submit" disabled={manualLoading} className="w-1/3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-2.5 rounded-xl transition shadow-sm disabled:opacity-50">
+                  {manualLoading ? '...' : 'Ekle'}
+                </button>
+              </div>
+            </div>
+
+          </form>
+        </div>
+
+      </div>
     </div>
   );
 }

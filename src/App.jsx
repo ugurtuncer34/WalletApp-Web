@@ -34,7 +34,7 @@ function Navbar() {
   if (!token) return null;
 
   return (
-    <nav className="bg-white border-b border-gray-200 px-4 py-3 mb-4">
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3 sm:mb-2 lg:mb-4 shadow-sm transition-all">
       <div className="max-w-2xl mx-auto flex justify-between items-center">
         <Link to="/" className="text-xl font-bold text-blue-600 tracking-tight">
           WalletApp ⚡
