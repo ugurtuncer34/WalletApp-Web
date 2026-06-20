@@ -1,11 +1,13 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar
 } from 'recharts';
+import SearchableSelect from '../Components/Combobox';
+import CategorySelect from '../Components/CategorySelect';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
@@ -22,6 +24,27 @@ export default function Home() {
 
   // Master Data State'leri 
   const [categories, setCategories] = useState([]);
+
+  // Kategori ağaç yapısı sıralaması
+  const groupedCategories = useMemo(() => {
+    const result = [];
+    // Sadece ana kategorileri (Parent'ı olmayanları) bul
+    const parents = categories.filter(c => !c.parentCategory);
+
+    parents.forEach(p => {
+      // Ana kategoriyi listeye ekle
+      result.push({ ...p, isParent: true });
+
+      // Bu ana kategoriye ait alt kategorileri bul ve hemen altına ekle
+      const children = categories.filter(c => c.parentCategory?.id === p.id);
+      children.forEach(ch => {
+        result.push({ ...ch, isParent: false });
+      });
+    });
+
+    return result.length > 0 ? result : categories;
+  }, [categories]);
+
   const [merchants, setMerchants] = useState([]);
   const [countries, setCountries] = useState([]);
   const [currencies, setCurrencies] = useState([]);
@@ -328,10 +351,12 @@ export default function Home() {
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-gray-500 uppercase">Kategori *</label>
-                <select required value={editForm.categoryId} onChange={e => setEditForm({ ...editForm, categoryId: e.target.value })} className="p-3 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
-                  <option value="">Seçiniz...</option>
-                  {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                </select>
+                <CategorySelect
+                  options={groupedCategories}
+                  value={editForm.categoryId}
+                  onChange={(val) => setEditForm({ ...editForm, categoryId: val })}
+                  placeholder="Seçiniz..."
+                />
               </div>
 
               <div className="flex flex-col gap-1 md:col-span-2">
@@ -341,10 +366,13 @@ export default function Home() {
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-gray-500 uppercase">İşyeri</label>
-                <select value={editForm.merchantId} onChange={e => setEditForm({ ...editForm, merchantId: e.target.value })} className="p-3 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
-                  <option value="">İsteğe Bağlı</option>
-                  {merchants.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
+                <SearchableSelect
+                  options={merchants}
+                  value={editForm.merchantId}
+                  onChange={(val) => setEditForm({ ...editForm, merchantId: val })}
+                  placeholder="İsteğe Bağlı"
+                  emptyLabel="Boş Bırak (Temizle)"
+                />
               </div>
 
               <div className="flex flex-col gap-1">
@@ -532,8 +560,25 @@ export default function Home() {
         <form onSubmit={handleFilterSearch} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 items-end">
           <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Başlangıç</label><input type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" /></div>
           <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Bitiş</label><input type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition" /></div>
-          <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Kategori</label><select value={filterCategoryId} onChange={(e) => setFilterCategoryId(e.target.value)} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition"><option value="">Tümü</option>{categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select></div>
-          <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">İşyeri</label><select value={filterMerchantId} onChange={(e) => setFilterMerchantId(e.target.value)} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition"><option value="">Tümü</option>{merchants.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}</select></div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Kategori</label>
+            <CategorySelect
+              options={groupedCategories}
+              value={filterCategoryId}
+              onChange={setFilterCategoryId}
+              placeholder="Tümü"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold text-gray-400 uppercase">İşyeri</label>
+            <SearchableSelect
+              options={merchants}
+              value={filterMerchantId}
+              onChange={setFilterMerchantId}
+              placeholder="Tümü"
+              emptyLabel="Tümü (Seçimi Temizle)"
+            />
+          </div>
           <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Ülke</label><select value={filterCountryId} onChange={(e) => setFilterCountryId(e.target.value)} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition"><option value="">Tümü</option>{countries.map(c => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}</select></div>
           <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Döviz</label><select value={filterCurrencyId} onChange={(e) => setFilterCurrencyId(e.target.value)} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition"><option value="">Tümü</option>{currencies.map(c => <option key={c.id} value={c.id}>{c.code} ({c.symbol})</option>)}</select></div>
           <div className="flex gap-2">
@@ -568,8 +613,8 @@ export default function Home() {
                     </div>
 
                     {/* Butonlar için sabit alan ayırdık. Tutar bu yüzden hep hafif sollu durur. Layout kayması olmaz. */}
-                     {/* opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto */}
-                    <div className="w-[60px] flex items-center justify-end gap-1"> 
+                    {/* opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto */}
+                    <div className="w-[60px] flex items-center justify-end gap-1">
                       <button onClick={() => handleOpenEditModal(t)} className="text-gray-400 hover:text-blue-600 bg-transparent hover:bg-blue-50 p-1.5 rounded-lg transition" title="Düzenle">
                         ✏️
                       </button>
@@ -599,10 +644,12 @@ export default function Home() {
 
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold text-gray-400 uppercase">Kategori *</label>
-            <select required value={manualForm.categoryId} onChange={e => setManualForm({ ...manualForm, categoryId: e.target.value })} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
-              <option value="">Seçiniz...</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-            </select>
+            <CategorySelect
+              options={groupedCategories}
+              value={manualForm.categoryId}
+              onChange={(val) => setManualForm({ ...manualForm, categoryId: val })}
+              placeholder="Seçiniz..."
+            />
           </div>
 
           <div className="flex flex-col gap-1 lg:col-span-2">
@@ -612,10 +659,13 @@ export default function Home() {
 
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold text-gray-400 uppercase">İşyeri</label>
-            <select value={manualForm.merchantId} onChange={e => setManualForm({ ...manualForm, merchantId: e.target.value })} className="p-2.5 bg-gray-50 text-sm text-gray-700 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-blue-500 transition">
-              <option value="">İsteğe Bağlı</option>
-              {merchants.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
+            <SearchableSelect
+              options={merchants}
+              value={manualForm.merchantId}
+              onChange={(val) => setManualForm({ ...manualForm, merchantId: val })}
+              placeholder="İsteğe Bağlı"
+              emptyLabel="Boş Bırak"
+            />
           </div>
 
           <div className="flex flex-col gap-1">
