@@ -1,6 +1,6 @@
-/* eslint-disable no-unused-vars */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const loginUrl = `${API_BASE}/auth/login`;
@@ -11,6 +11,8 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const { isDarkMode, toggleTheme } = useTheme();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -26,10 +28,8 @@ export default function Login() {
 
       if (res.ok) {
         const data = await res.json();
-        // Gelen Token'ı tarayıcının hafızasına kazıyoruz
         localStorage.setItem('wallet_token', data.token);
         localStorage.setItem('wallet_user', data.username);
-        // Ana sayfaya yönlendir
         navigate('/');
       } else {
         setError('Kullanıcı adı veya şifre hatalı!');
@@ -42,11 +42,20 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 w-full max-w-sm">
-        <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Giriş Yap</h2>
-        
-        {error && <div className="bg-red-50 text-red-500 p-3 rounded-lg text-sm mb-4">{error}</div>}
+    <div className="min-h-screen flex items-center justify-center px-4 relative bg-gray-50 dark:bg-gray-950 transition-colors">
+
+      <button
+        onClick={toggleTheme}
+        className="absolute top-6 right-6 p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors shadow-sm border border-gray-200 dark:border-gray-700"
+        title={isDarkMode ? "Gündüz Modu" : "Gece Modu"}
+      >
+        {isDarkMode ? '☀️' : '🌙'}
+      </button>
+
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 w-full max-w-sm transition-colors">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white text-center mb-6">Giriş Yap</h2>
+
+        {error && <div className="bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 p-3 rounded-lg text-sm mb-4">{error}</div>}
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <input
@@ -55,7 +64,7 @@ export default function Login() {
             required
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition"
+            className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors autofill:!bg-gray-900 autofill:!text-white"
           />
           <input
             type="password"
@@ -63,7 +72,7 @@ export default function Login() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition"
+            className="w-full p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition-colors autofill:!bg-gray-900 autofill:!text-white"
           />
           <button
             type="submit"

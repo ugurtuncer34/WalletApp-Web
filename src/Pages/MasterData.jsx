@@ -4,12 +4,12 @@ import GenericList from '../Components/GenericList';
 export default function MasterData() {
   const { data, loading, fetchMasterData, token } = useMasterDataManager();
 
-  if (loading && !data) return <div className="p-8 text-gray-500">Veritabanı taranıyor...</div>;
-  if (!data) return <div className="p-8 text-red-500">Veri bulunamadı. Backend açık mı?</div>;
+  if (loading && !data) return <div className="p-8 text-gray-500 dark:text-gray-400">Veritabanı taranıyor...</div>;
+  if (!data) return <div className="p-8 text-red-500 dark:text-red-400">Veri bulunamadı. Backend açık mı?</div>;
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 font-sans">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6 flex items-center gap-2">
         📊 Master Data Röntgeni
       </h1>
 
@@ -27,7 +27,7 @@ export default function MasterData() {
           ]}
           onRefresh={fetchMasterData}
         />
-
+        {/* Diğer GenericList bileşenleri için de aynı mantığı koruyoruz */}
         <GenericList
           title="Ülkeler"
           icon="🌍"
@@ -40,7 +40,6 @@ export default function MasterData() {
           ]}
           onRefresh={fetchMasterData}
         />
-
         <GenericList
           title="İşyerleri"
           icon="🏢"
@@ -53,7 +52,6 @@ export default function MasterData() {
           ]}
           onRefresh={fetchMasterData}
         />
-
         <GenericList
           title="Kurlar"
           icon="💵"
@@ -67,7 +65,6 @@ export default function MasterData() {
           ]}
           onRefresh={fetchMasterData}
         />
-
         <GenericList
           title="Etiketler"
           icon="🏷️"
