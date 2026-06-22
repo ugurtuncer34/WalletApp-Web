@@ -18,7 +18,7 @@ const getUserRole = () => {
 
 function Navbar() {
   const navigate = useNavigate();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode, toggleTheme } = useTheme(); // isDarkMode'u doğrudan kullanıyoruz
   const token = localStorage.getItem('wallet_token');
   const user = localStorage.getItem('wallet_user');
 
@@ -33,39 +33,48 @@ function Navbar() {
 
   if (!token) return null;
 
-  return (
-    // 1. bg-gray-50/90 yaparak body rengiyle eşitledik, beyazlık gitti.
-    <nav className="sticky top-0 z-50 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-3 py-2 shadow-sm transition-all duration-300">
-      <div className="max-w-2xl mx-auto flex justify-between items-center">
+  // ARKA PLAN RENGİNİ STATE'E BAĞLADIK (Daha garanti)
+  const bgColor = isDarkMode ? "bg-gray-900" : "bg-gray-50";
 
-        {/* Logo - Mobilde daha kompakt */}
-        <Link to="/" className="text-lg font-bold text-blue-600 dark:text-blue-400 tracking-tight">
-          FamilyFinance ⚡
+  return (
+    <nav className={`sticky top-0 z-50 ${bgColor} backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-3 py-2 shadow-sm transition-colors duration-300`}>
+      <div className="max-w-3xl mx-auto flex justify-between items-center">
+        
+        {/* LOGO: Mobilde sadece icon, masaüstünde yazı */}
+        <Link to="/" className="text-lg font-bold text-blue-600 dark:text-blue-400">
+          <span className="hidden sm:inline">FamilyFinance ⚡</span>
+          <span className="sm:hidden">⚡</span>
         </Link>
 
-        {/* Sağ Taraf - Menü */}
+        {/* MENÜ */}
         <div className="flex gap-2 sm:gap-4 items-center">
-
-          {/* Mobilde 'Ana Sayfa' yazısını gizledik, sadece icon kalabilir ama şimdilik sadece yazıyı saklıyoruz */}
+          
+          {/* Ana Sayfa: Sadece sm ve üzeri ekranlarda görünür */}
           <Link to="/" className="hidden sm:block text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600">Ana Sayfa</Link>
 
           {isAdmin && (
             <Link to="/master-data" className="text-sm font-medium text-purple-600 dark:text-purple-400">
-              Röntgen 🛡️
+              {/* Mobilde ikon, masaüstünde yazı */}
+              <span className="hidden sm:inline">Röntgen 🛡️</span>
+              <span className="sm:hidden">🛡️</span>
             </Link>
           )}
 
-          {/* Gece / Gündüz Butonu */}
+          {/* Tema Butonu */}
           <button
             onClick={toggleTheme}
             className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
           >
             {isDarkMode ? '☀️' : '🌙'}
           </button>
-
-          {/* Çıkış Butonu - İsmi mobilde sakladık */}
-          <button onClick={handleLogout} className="text-sm font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400">
-            Çıkış
+          <span className="text-sm text-gray-400 dark:text-gray-500 hidden sm:inline">👋 {user}</span>
+          {/* Çıkış */}
+          <button 
+            onClick={handleLogout} 
+            className="text-sm font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400"
+          >
+            <span className="hidden sm:inline">Çıkış</span>
+            <span className="sm:hidden">🚪</span>
           </button>
         </div>
       </div>
