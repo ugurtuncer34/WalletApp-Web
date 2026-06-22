@@ -24,6 +24,28 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('home'); 
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
 
+  // --- BOTTOM SHEET SÜRÜKLEME (SWIPE) STATE'İ ---
+  const [touchStartY, setTouchStartY] = useState(null);
+
+  const handleTouchStart = (e) => {
+    // Parmağın ekrana ilk dokunduğu Y (dikey) koordinatını alıyoruz
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartY === null) return;
+    
+    // Parmağın ekrandan kalktığı anki koordinatı alıyoruz
+    const touchEndY = e.changedTouches[0].clientY;
+    const distance = touchEndY - touchStartY;
+
+    // Eğer parmak aşağı doğru 50 pikselden fazla kaydırıldıysa menüyü kapat
+    if (distance > 50) {
+      setIsBottomSheetOpen(false);
+    }
+    setTouchStartY(null); // State'i sıfırla
+  };
+
   const masterData = useMasterData();
   const dashboardInfo = useDashboard();
   const filters = useFilters();
@@ -180,25 +202,38 @@ export default function Home() {
       </div>
 
       {/* BOTTOM SHEET MODAL (Sadece Detaylı Ekleme) */}
-      {isBottomSheetOpen && (
+      <div 
+        className={`lg:hidden fixed inset-0 z-[60] flex justify-center items-end bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+          isBottomSheetOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setIsBottomSheetOpen(false)}
+      >
         <div 
-          className="lg:hidden fixed inset-0 z-[60] flex justify-center items-end bg-black/60 backdrop-blur-sm"
-          onClick={() => setIsBottomSheetOpen(false)}
+          className={`bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 pb-12 max-h-[85vh] overflow-y-auto shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transform transition-transform duration-300 ease-out ${
+            isBottomSheetOpen ? "translate-y-0" : "translate-y-full"
+          }`}
+          onClick={(e) => e.stopPropagation()}
         >
+          
+          {/* =======================================================
+              SÜRÜKLEME ÇUBUĞU (Drag Handle) VE DOKUNMA ALANI
+              ======================================================= */}
           <div 
-            className="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 pb-12 max-h-[85vh] overflow-y-auto animate-slideUp shadow-[0_-10px_40px_rgba(0,0,0,0.3)]"
-            onClick={(e) => e.stopPropagation()}
+            className="w-full flex justify-center pb-6 -mt-2 pt-2 cursor-grab active:cursor-grabbing"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
           >
-            {/* Sürükleme Çubuğu İkonu */}
-            <div className="w-12 h-1.5 bg-gray-300 dark:bg-slate-700 rounded-full mx-auto mb-6"></div>
-            <TransactionForm
-              masterData={masterData}
-              onAdd={handleBottomSheetFormSubmit}
-              loading={manualLoading}
-            />
+            {/* Orijinal gri çubuğu biraz kalınlaştırdım ve uzattım ki daha "native" dursun (w-16 h-1.5) */}
+            <div className="w-16 h-1.5 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
           </div>
+          
+          <TransactionForm
+            masterData={masterData}
+            onAdd={handleBottomSheetFormSubmit}
+            loading={manualLoading}
+          />
         </div>
-      )}
+      </div>
 
       {/* MOBİL ALT MENÜ (TAB BAR) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-gray-200 dark:border-slate-800 flex justify-around items-center h-16 z-40 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.1)]">
