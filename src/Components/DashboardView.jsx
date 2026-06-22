@@ -3,7 +3,7 @@ import {
     PieChart, Pie, Cell, BarChart, Bar
 } from 'recharts';
 import { formatChartDate } from '../utils/dateHelpers';
-import { useTheme } from '../context/ThemeContext'; // ThemeContext'i import ettik
+import { useTheme } from '../context/ThemeContext';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
@@ -17,8 +17,8 @@ export default function DashboardView({
     const { isDarkMode } = useTheme();
 
     // Chart renklerini karanlık moda göre ayarla
-    const gridColor = isDarkMode ? '#374151' : '#f3f4f6'; // Gray-700 : Gray-100
-    const textColor = isDarkMode ? '#9ca3af' : '#9ca3af'; // Gray-400 (her iki modda da okunur)
+    const gridColor = isDarkMode ? '#374151' : '#f3f4f6';
+    const textColor = isDarkMode ? '#9ca3af' : '#9ca3af';
     const tooltipStyle = {
         borderRadius: '12px',
         border: isDarkMode ? '1px solid #374151' : 'none',
@@ -28,17 +28,20 @@ export default function DashboardView({
     };
 
     return (
-        <div className="flex flex-col gap-4">
-            {/* DASHBOARD BAŞLIK VE FİLTRE BAR */}
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 gap-4 transition-colors">
-                <h3 className="text-gray-800 dark:text-gray-100 font-bold flex items-center gap-2">
-                    📊 Finansal Özet
-                </h3>
+        <div className="flex flex-col gap-4 lg:gap-6">
+            
+            {/* ==========================================
+                1. KOMPAKT FİLTRE VE TOPLAM HARCAMA ALANI
+                Mobilde alt alta dar, Masaüstünde yan yana geniş
+                ========================================== */}
+            <div className="flex flex-col sm:flex-row justify-between items-center bg-blue-600 rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-[0_4px_15px_-3px_rgba(37,99,235,0.4)] text-white gap-4">
+                
+                {/* Sol Taraf: Filtre */}
                 <div className="flex gap-2 w-full sm:w-auto">
                     <select
                         value={dashboardMonth}
                         onChange={(e) => setDashboardMonth(Number(e.target.value))}
-                        className="flex-1 sm:w-32 p-2.5 bg-gray-50 dark:bg-gray-900 text-sm font-semibold text-gray-700 dark:text-gray-300 rounded-xl border border-transparent focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:border-blue-500 transition cursor-pointer"
+                        className="flex-1 sm:w-32 p-2 bg-blue-700/50 border border-blue-500/50 text-white rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
                     >
                         <option value={1}>Ocak</option><option value={2}>Şubat</option><option value={3}>Mart</option>
                         <option value={4}>Nisan</option><option value={5}>Mayıs</option><option value={6}>Haziran</option>
@@ -49,7 +52,7 @@ export default function DashboardView({
                     <select
                         value={dashboardYear}
                         onChange={(e) => setDashboardYear(Number(e.target.value))}
-                        className="flex-1 sm:w-28 p-2.5 bg-gray-50 dark:bg-gray-900 text-sm font-semibold text-gray-700 dark:text-gray-300 rounded-xl border border-transparent focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:border-blue-500 transition cursor-pointer"
+                        className="flex-1 sm:w-28 p-2 bg-blue-700/50 border border-blue-500/50 text-white rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
                     >
                         <option value={2024}>2024</option>
                         <option value={2025}>2025</option>
@@ -57,52 +60,50 @@ export default function DashboardView({
                         <option value={2027}>2027</option>
                     </select>
                 </div>
+
+                {/* Sağ Taraf: Toplam Harcama */}
+                <div className="text-center sm:text-right w-full sm:w-auto">
+                    <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">Bu Ayki Toplam Harcama</p>
+                    <h2 className="text-3xl lg:text-4xl font-black tracking-tight flex items-baseline justify-center sm:justify-end gap-1">
+                        {dashboard?.totalMonthlyExpense?.toLocaleString('tr-TR')} <span className="text-lg opacity-80 font-medium">₺</span>
+                    </h2>
+                </div>
             </div>
 
-            {/* DASHBOARD GRAFİKLERİ */}
+            {/* ==========================================
+                2. GRAFİKLER 
+                ========================================== */}
             {dashboard && (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-3xl shadow-lg text-white relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-20 text-6xl">💸</div>
-                            <h3 className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-2 relative z-10">Bu Ayki Toplam Harcama</h3>
-                            <p className="text-3xl font-black relative z-10">{dashboard.totalMonthlyExpense?.toLocaleString('tr-TR')} <span className="text-lg">₺</span></p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition-colors">
-                            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Zirve Kategori</h3>
-                            <p className="text-xl font-bold text-gray-800 dark:text-gray-100 truncate">{dashboard.categoryDistribution?.length > 0 ? dashboard.categoryDistribution[0].label : '-'}</p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 flex flex-col justify-center transition-colors">
-                            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Sık Gidilen İşyeri</h3>
-                            <p className="text-xl font-bold text-gray-800 dark:text-gray-100 truncate">{dashboard.merchantDistribution?.length > 0 ? dashboard.merchantDistribution[0].label : '-'}</p>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 transition-colors">
-                        <h3 className="text-gray-800 dark:text-gray-100 font-bold mb-6">Günlük Harcama Trendi</h3>
-                        <div className="h-[240px] w-full">
+                    {/* GÜNLÜK TREND (Tek sıra geniş) */}
+                    <div className="bg-white dark:bg-slate-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-slate-700 transition-colors">
+                        <h3 className="text-gray-800 dark:text-gray-100 font-bold mb-4 text-sm lg:text-base">Günlük Harcama Trendi</h3>
+                        <div className="h-[200px] lg:h-[280px] w-full">
                             {dashboard.dailyTrend?.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={dashboard.dailyTrend}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
-                                        <XAxis dataKey="date" tickFormatter={formatChartDate} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: textColor }} dy={10} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: textColor }} dx={-10} />
+                                        <XAxis dataKey="date" tickFormatter={formatChartDate} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: textColor }} dy={10} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: textColor }} dx={-10} />
                                         <Tooltip labelFormatter={formatChartDate} contentStyle={tooltipStyle} />
-                                        <Line type="monotone" dataKey="amount" name="Tutar (₺)" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                                        <Line type="monotone" dataKey="amount" name="Tutar (₺)" stroke="#3b82f6" strokeWidth={3} dot={{ r: 3, strokeWidth: 2 }} activeDot={{ r: 5 }} />
                                     </LineChart>
                                 </ResponsiveContainer>
                             ) : <div className="h-full flex items-center justify-center text-gray-400 text-sm">Veri yok.</div>}
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 flex flex-col transition-colors">
-                            <h3 className="text-gray-800 dark:text-gray-100 font-bold mb-4">Kategori Dağılımı</h3>
-                            <div className="flex-1 h-[240px]">
+                    {/* KATEGORİ DAĞILIMI VE İŞYERLERİ (Yan yana veya alt alta) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+                        
+                        {/* KATEGORİ DAĞILIMI (PIE) */}
+                        <div className="bg-white dark:bg-slate-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-slate-700 flex flex-col transition-colors">
+                            <h3 className="text-gray-800 dark:text-gray-100 font-bold mb-2 text-sm lg:text-base">Kategori Dağılımı</h3>
+                            <div className="flex-1 h-[200px] lg:h-[300px]">
                                 {dashboard.categoryDistribution?.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
-                                            <Pie data={dashboard.categoryDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" nameKey="label" stroke="none">
+                                            <Pie data={dashboard.categoryDistribution} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value" nameKey="label" stroke="none">
                                                 {dashboard.categoryDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                                             </Pie>
                                             <Tooltip formatter={(value, name) => [`${value} ₺`, name]} contentStyle={tooltipStyle} />
@@ -110,31 +111,34 @@ export default function DashboardView({
                                     </ResponsiveContainer>
                                 ) : <div className="h-full flex items-center justify-center text-gray-400 text-sm">Veri yok.</div>}
                             </div>
-                            <div className="flex flex-wrap justify-center gap-3 mt-4">
+                            {/* Lejant (Alt Bilgi) */}
+                            <div className="flex flex-wrap justify-center gap-2 lg:gap-3 mt-2">
                                 {dashboard.categoryDistribution?.slice(0, 5).map((entry, index) => (
-                                    <div key={index} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300">
+                                    <div key={index} className="flex items-center gap-1.5 text-[10px] lg:text-xs text-gray-600 dark:text-gray-300">
                                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>{entry.label}
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 transition-colors">
-                            <h3 className="text-gray-800 dark:text-gray-100 font-bold mb-4">Sık Kullanılan İşyerleri</h3>
-                            <div className="h-[240px]">
+                        {/* SIK KULLANILAN İŞYERLERİ (BAR) */}
+                        <div className="bg-white dark:bg-slate-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-slate-700 transition-colors">
+                            <h3 className="text-gray-800 dark:text-gray-100 font-bold mb-2 text-sm lg:text-base">Sık Kullanılan İşyerleri</h3>
+                            <div className="h-[200px] lg:h-[300px]">
                                 {dashboard.merchantDistribution?.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={dashboard.merchantDistribution.slice(0, 5)} layout="vertical" margin={{ left: 0, right: 20 }}>
                                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={gridColor} />
                                             <XAxis type="number" hide />
-                                            <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: textColor }} width={80} />
-                                            <Tooltip cursor={{ fill: isDarkMode ? '#374151' : '#f9fafb' }} contentStyle={tooltipStyle} />
-                                            <Bar dataKey="value" name="Tutar (₺)" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
+                                            <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: textColor }} width={70} />
+                                            <Tooltip cursor={{ fill: isDarkMode ? '#334155' : '#f8fafc' }} contentStyle={tooltipStyle} />
+                                            <Bar dataKey="value" name="Tutar (₺)" fill="#10b981" radius={[0, 4, 4, 0]} barSize={16} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 ) : <div className="h-full flex items-center justify-center text-gray-400 text-sm">Veri yok.</div>}
                             </div>
                         </div>
+
                     </div>
                 </>
             )}
