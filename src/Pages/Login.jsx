@@ -36,6 +36,7 @@ export default function Login() {
       }
     } catch (err) {
       setError('Sunucuya ulaşılamıyor.');
+      console.error("Sunucuya ulaşılamıyor", err)
     } finally {
       setLoading(false);
     }

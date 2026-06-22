@@ -35,4 +35,5 @@ export const ThemeProvider = ({ children }) => {
 };
 
 // İstediğimiz yerden kolayca çağırmak için custom hook
+// eslint-disable-next-line react-refresh/only-export-components
 export const useTheme = () => useContext(ThemeContext);

@@ -9,3 +9,81 @@ body {
 .dark body {
   @apply bg-gray-900 text-gray-100;
 }
+
+/* ==========================================
+   ÖZEL KAYDIRMA ÇUBUĞU (SCROLLBAR) TASARIMI
+   ========================================== */
+
+/* Tüm tarayıcılar (Firefox dahil) için ince scrollbar ayarı */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+  /* Gündüz modu renkleri (gri-300 ve şeffaf) */
+}
+
+/* Gece modunda Firefox için scrollbar renkleri */
+.dark * {
+  scrollbar-color: #4b5563 transparent;
+  /* Gece modu renkleri (gri-600 ve şeffaf) */
+}
+
+/* Chrome, Edge ve Safari için Scrollbar Yapısı */
+::-webkit-scrollbar {
+  width: 6px;
+  /* Dikey kaydırma çubuğu genişliği */
+  height: 6px;
+  /* Yatay kaydırma çubuğu yüksekliği */
+}
+
+/* Kaydırma çubuğunun arka planı (Track) */
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Gündüz Modu: Kaydırma çubuğunun tutamacı (Thumb) */
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  /* gray-300 */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+  /* gray-400 */
+}
+
+/* Gece Modu: Kaydırma çubuğunun tutamacı (Thumb) */
+.dark ::-webkit-scrollbar-thumb {
+  background: #374151;
+  /* gray-700 */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+  /* gray-600 */
+}
+
+/* ==========================================
+   TARAYICI YERLEŞİK ELEMENTLERİ (TAKVİM VB.)
+   ========================================== */
+
+/* 1. Gece modunda tüm tarayıcı popup'larını (takvim paneli) karanlık yap */
+.dark {
+  color-scheme: dark;
+}
+
+/* 2. Takvim açma ikonunu (siyah minik takvim) gece modunda beyaza çevir */
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  /* Siyahı tam zıttı olan beyaza çevirir */
+  opacity: 0.6;
+  /* Göz yormaması için hafif grileştirir */
+  cursor: pointer;
+}
+
+/* İkonun üzerine gelince tam parlak beyaz olsun */
+.dark input[type="date"]::-webkit-calendar-picker-indicator:hover,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
