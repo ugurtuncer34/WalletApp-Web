@@ -29,19 +29,19 @@ export default function DashboardView({
 
     return (
         <div className="flex flex-col gap-4 lg:gap-6">
-            
+
             {/* ==========================================
                 1. KOMPAKT FİLTRE VE TOPLAM HARCAMA ALANI
                 Mobilde alt alta dar, Masaüstünde yan yana geniş
                 ========================================== */}
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-blue-600 rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-[0_4px_15px_-3px_rgba(37,99,235,0.4)] text-white gap-4">
-                
+            <div className="flex flex-col sm:flex-row justify-between items-center bg-blue-50 dark:bg-blue-800 rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-[0_2px_10px_-3px_rgba(37,99,235,0.1)] border border-blue-100 dark:border-blue-600 text-blue-900 dark:text-blue-50 gap-4 transition-colors">
+
                 {/* Sol Taraf: Filtre */}
                 <div className="flex gap-2 w-full sm:w-auto">
                     <select
                         value={dashboardMonth}
                         onChange={(e) => setDashboardMonth(Number(e.target.value))}
-                        className="flex-1 sm:w-32 p-2 bg-blue-700/50 border border-blue-500/50 text-white rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
+                        className="flex-1 sm:w-32 p-2 bg-white dark:bg-blue-950 border border-blue-200 dark:border-blue-700 text-blue-900 dark:text-blue-100 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer shadow-sm"
                     >
                         <option value={1}>Ocak</option><option value={2}>Şubat</option><option value={3}>Mart</option>
                         <option value={4}>Nisan</option><option value={5}>Mayıs</option><option value={6}>Haziran</option>
@@ -52,7 +52,7 @@ export default function DashboardView({
                     <select
                         value={dashboardYear}
                         onChange={(e) => setDashboardYear(Number(e.target.value))}
-                        className="flex-1 sm:w-28 p-2 bg-blue-700/50 border border-blue-500/50 text-white rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
+                        className="flex-1 sm:w-28 p-2 bg-white dark:bg-blue-950 border border-blue-200 dark:border-blue-700 text-blue-900 dark:text-blue-100 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer shadow-sm"
                     >
                         <option value={2024}>2024</option>
                         <option value={2025}>2025</option>
@@ -63,9 +63,10 @@ export default function DashboardView({
 
                 {/* Sağ Taraf: Toplam Harcama */}
                 <div className="text-center sm:text-right w-full sm:w-auto">
-                    <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">Bu Ayki Toplam Harcama</p>
+                    <p className="text-blue-600/70 dark:text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Bu Ayki Toplam Harcama</p>
                     <h2 className="text-3xl lg:text-4xl font-black tracking-tight flex items-baseline justify-center sm:justify-end gap-1">
-                        {dashboard?.totalMonthlyExpense?.toLocaleString('tr-TR')} <span className="text-lg opacity-80 font-medium">₺</span>
+                        {dashboard?.totalMonthlyExpense?.toLocaleString('tr-TR')}
+                        <span className="text-lg opacity-60 font-medium">₺</span>
                     </h2>
                 </div>
             </div>
@@ -77,7 +78,7 @@ export default function DashboardView({
                 <>
                     {/* GÜNLÜK TREND (Tek sıra geniş) */}
                     <div className="bg-white dark:bg-slate-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-slate-700 transition-colors">
-                        <h3 className="text-gray-800 dark:text-gray-100 font-bold mb-4 text-sm lg:text-base">Günlük Harcama Trendi</h3>
+                        <h3 className="text-blue-900 dark:text-gray-100 font-bold mb-4 text-sm lg:text-base">Günlük Harcama Trendi</h3>
                         <div className="h-[200px] lg:h-[280px] w-full">
                             {dashboard.dailyTrend?.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
@@ -95,10 +96,10 @@ export default function DashboardView({
 
                     {/* KATEGORİ DAĞILIMI VE İŞYERLERİ (Yan yana veya alt alta) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-                        
+
                         {/* KATEGORİ DAĞILIMI (PIE) */}
                         <div className="bg-white dark:bg-slate-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-slate-700 flex flex-col transition-colors">
-                            <h3 className="text-gray-800 dark:text-gray-100 font-bold mb-2 text-sm lg:text-base">Kategori Dağılımı</h3>
+                            <h3 className="text-blue-900 dark:text-gray-100 font-bold mb-2 text-sm lg:text-base">Kategori Dağılımı</h3>
                             <div className="flex-1 h-[200px] lg:h-[300px]">
                                 {dashboard.categoryDistribution?.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%">
@@ -123,14 +124,14 @@ export default function DashboardView({
 
                         {/* SIK KULLANILAN İŞYERLERİ (BAR) */}
                         <div className="bg-white dark:bg-slate-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-slate-700 transition-colors">
-                            <h3 className="text-gray-800 dark:text-gray-100 font-bold mb-2 text-sm lg:text-base">Sık Kullanılan İşyerleri</h3>
+                            <h3 className="text-blue-900 dark:text-gray-100 font-bold mb-2 text-sm lg:text-base">Sık Kullanılan İşyerleri</h3>
                             <div className="h-[200px] lg:h-[300px]">
                                 {dashboard.merchantDistribution?.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={dashboard.merchantDistribution.slice(0, 5)} layout="vertical" margin={{ left: 0, right: 20 }}>
                                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={gridColor} />
                                             <XAxis type="number" hide />
-                                            <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: textColor }} width={70} />
+                                            <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: textColor }} width={80} />
                                             <Tooltip cursor={{ fill: isDarkMode ? '#334155' : '#f8fafc' }} contentStyle={tooltipStyle} />
                                             <Bar dataKey="value" name="Tutar (₺)" fill="#10b981" radius={[0, 4, 4, 0]} barSize={16} />
                                         </BarChart>

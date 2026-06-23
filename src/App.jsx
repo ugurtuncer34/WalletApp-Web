@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { useState } from 'react';
 import Home from './Pages/Home';
 import MasterData from './Pages/MasterData';
 import Login from './Pages/Login';
+import ProfileModal from './Components/ProfileModal';
 
 const getUserRole = () => {
   const token = localStorage.getItem('wallet_token');
@@ -15,7 +17,7 @@ const getUserRole = () => {
   }
 };
 
-function Navbar() {
+function Navbar({onProfileClick}) {
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
   const token = localStorage.getItem('wallet_token');
@@ -61,7 +63,12 @@ function Navbar() {
             {isDarkMode ? '☀️' : '🌙'}
           </button>
 
-          <span className="text-xs sm:text-sm text-gray-400 hidden sm:inline">👋 {user}</span>
+          <span 
+            className="text-xs sm:text-sm text-gray-400 hidden sm:inline cursor-pointer hover:text-blue-500 transition" 
+            onClick={onProfileClick} // <-- Burada artık tanımlı
+          >
+            👋 {user}
+          </span>
 
           <button onClick={handleLogout} className="text-sm font-medium text-red-500 hover:text-red-700">
             <span className="hidden sm:inline">Çıkış</span>
@@ -79,10 +86,10 @@ const AdminRoute = ({ children }) => {
 };
 
 // Fazladan koyduğum o belalı BottomTabBar'ı sildim. Sadece Layout iskeleti kaldı.
-function Layout({ children }) {
+function Layout({ children, onProfileClick }) {
   return (
     <div className="flex flex-col min-h-screen relative">
-      <Navbar />
+      <Navbar onProfileClick={onProfileClick} />
       <main className="flex-grow">
         {children}
       </main>
@@ -91,13 +98,16 @@ function Layout({ children }) {
 }
 
 export default function App() {
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   return (
     <ThemeProvider>
       <BrowserRouter>
+      <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Layout><Home /></Layout>} />
-          <Route path="/master-data" element={<Layout><AdminRoute><MasterData /></AdminRoute></Layout>} />
+          {/* Tek ve doğru olan yol: */}
+          <Route path="/" element={<Layout onProfileClick={() => setIsProfileOpen(true)}><Home /></Layout>} />
+          <Route path="/master-data" element={<Layout onProfileClick={() => setIsProfileOpen(true)}><AdminRoute><MasterData /></AdminRoute></Layout>} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

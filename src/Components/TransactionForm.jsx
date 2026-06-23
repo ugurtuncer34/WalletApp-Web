@@ -34,7 +34,7 @@ export default function TransactionForm({ masterData, onAdd, loading }) {
 
     return (
         <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 mb-8 transition-colors">
-            <h3 className="text-gray-800 dark:text-gray-100 font-bold mb-4 flex items-center gap-2">✍️ Detaylı Harcama Ekle</h3>
+            <h3 className="text-blue-900 dark:text-gray-100 font-bold mb-4 flex items-center gap-2">✍️ Detaylı Harcama Ekle</h3>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Tutar *</label>

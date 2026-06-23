@@ -31,7 +31,7 @@ export default function AdvancedFilter({ filters, masterData, categories, onEdit
             <button 
                 type="button" 
                 onClick={() => setIsFilterOpen(!isFilterOpen)} 
-                className="w-full flex justify-between items-center text-gray-800 dark:text-gray-100 font-bold mb-2 group"
+                className="w-full flex justify-between items-center text-blue-900 dark:text-gray-100 font-bold mb-2 group"
             >
                 <span className="flex items-center gap-2">🔍 Gelişmiş Harcama Arama</span>
                 <span className={`text-gray-400 group-hover:text-blue-500 transform transition-transform duration-300 ${isFilterOpen ? 'rotate-180' : 'rotate-0'}`}>

@@ -24,26 +24,21 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('home'); 
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
 
+  // --- MOBİL PROFİL SAYFASI İÇİN STATE'LER ---
+  const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwError, setPwError] = useState(null);
+
   // --- BOTTOM SHEET SÜRÜKLEME (SWIPE) STATE'İ ---
   const [touchStartY, setTouchStartY] = useState(null);
 
-  const handleTouchStart = (e) => {
-    // Parmağın ekrana ilk dokunduğu Y (dikey) koordinatını alıyoruz
-    setTouchStartY(e.touches[0].clientY);
-  };
+  const handleTouchStart = (e) => setTouchStartY(e.touches[0].clientY);
 
   const handleTouchEnd = (e) => {
     if (touchStartY === null) return;
-    
-    // Parmağın ekrandan kalktığı anki koordinatı alıyoruz
-    const touchEndY = e.changedTouches[0].clientY;
-    const distance = touchEndY - touchStartY;
-
-    // Eğer parmak aşağı doğru 50 pikselden fazla kaydırıldıysa menüyü kapat
-    if (distance > 50) {
-      setIsBottomSheetOpen(false);
-    }
-    setTouchStartY(null); // State'i sıfırla
+    const distance = e.changedTouches[0].clientY - touchStartY;
+    if (distance > 50) setIsBottomSheetOpen(false);
+    setTouchStartY(null);
   };
 
   const masterData = useMasterData();
@@ -117,87 +112,105 @@ export default function Home() {
     if (res.success) setIsBottomSheetOpen(false);
   };
 
+  // --- MOBİL ŞİFRE DEĞİŞTİRME HANDLER ---
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (passwords.newPassword !== passwords.confirmPassword) {
+        setPwError("Yeni şifreler eşleşmiyor!");
+        return;
+    }
+    setPwLoading(true); setPwError(null);
+    try {
+        const token = localStorage.getItem('wallet_token');
+        const API_BASE = import.meta.env.VITE_API_BASE_URL;
+        const response = await fetch(`${API_BASE}/Auth/change-password`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ currentPassword: passwords.currentPassword, newPassword: passwords.newPassword })
+        });
+        if (response.ok) {
+            alert("Şifre başarıyla değiştirildi!");
+            setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        } else {
+            setPwError("Şifre değiştirilemedi. Mevcut şifrenizi kontrol edin.");
+        }
+    } catch (err) {
+        setPwError("Sunucu hatası. Bağlantınızı kontrol edin.");
+    } finally {
+        setPwLoading(false);
+    }
+  };
+
   return (
-    // DİKKAT: pb-28 sadece mobilde (alt barın üstünde kalması için). lg:pb-8 masaüstü boşluğu.
-    // DİKKAT: gap-4 mobilde dar, lg:gap-6 masaüstünde geniş aralık.
     <div className="max-w-7xl mx-auto px-4 md:px-6 pt-2 lg:pt-4 pb-28 lg:pb-8 font-sans flex flex-col gap-4 lg:gap-6 relative">
 
-      <QuickAddModal
-        isOpen={isQuickModalOpen}
-        onClose={() => setIsQuickModalOpen(false)}
-        chipName={selectedChip}
-        onSubmit={handleQuickModalSubmit}
-        loading={quickLoading}
-      />
-      <EditModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        initialData={editInitialData}
-        masterData={masterData}
-        onSubmit={handleEditSubmit}
-        loading={editLoading}
-      />
+      <QuickAddModal isOpen={isQuickModalOpen} onClose={() => setIsQuickModalOpen(false)} chipName={selectedChip} onSubmit={handleQuickModalSubmit} loading={quickLoading} />
+      <EditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} initialData={editInitialData} masterData={masterData} onSubmit={handleEditSubmit} loading={editLoading} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
         
         {/* TAB 1: ANA SAYFA */}
-        {/* Mobilde dar gap (gap-4), masaüstünde geniş (lg:gap-6) */}
         <div className={`${activeTab === 'home' ? 'flex' : 'hidden'} lg:flex flex-col gap-4 lg:gap-6 lg:col-span-4`}>
-          <SmartInput
-            inputText={inputText}
-            setInputText={setInputText}
-            onQuickAdd={handleSmartInputSubmit}
-            loading={quickLoading}
-            onChipClick={handleChipClick}
-          />
-          <TransactionFeed
-            transactions={transactions}
-            categories={masterData.categories}
-            hasMore={hasMore}
-            onLoadMore={() => fetchTransactions(page + 1)}
-            onEdit={handleOpenEditModal}
-            onDelete={deleteTransaction}
-          />
+          <SmartInput inputText={inputText} setInputText={setInputText} onQuickAdd={handleSmartInputSubmit} loading={quickLoading} onChipClick={handleChipClick} />
+          <TransactionFeed transactions={transactions} categories={masterData.categories} hasMore={hasMore} onLoadMore={() => fetchTransactions(page + 1)} onEdit={handleOpenEditModal} onDelete={deleteTransaction} />
         </div>
 
         {/* TAB 2: GRAFİK */}
         <div className={`${activeTab === 'grafik' ? 'flex' : 'hidden'} lg:flex flex-col gap-4 lg:gap-6 lg:col-span-8`}>
-          <DashboardView
-            dashboard={dashboardInfo.dashboard}
-            dashboardMonth={dashboardInfo.dashboardMonth}
-            setDashboardMonth={dashboardInfo.setDashboardMonth}
-            dashboardYear={dashboardInfo.dashboardYear}
-            setDashboardYear={dashboardInfo.setDashboardYear}
-          />
+          <DashboardView dashboard={dashboardInfo.dashboard} dashboardMonth={dashboardInfo.dashboardMonth} setDashboardMonth={dashboardInfo.setDashboardMonth} dashboardYear={dashboardInfo.dashboardYear} setDashboardYear={dashboardInfo.setDashboardYear} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-8 mt-0 lg:mt-4">
         {/* TAB 3: ARA */}
         <div className={`${activeTab === 'ara' ? 'block' : 'hidden'} lg:block`}>
-          <AdvancedFilter
-            filters={filters}
-            masterData={masterData}
-            categories={masterData.categories}
-            onEdit={handleOpenEditModal}
-            onDelete={deleteTransaction}
-          />
+          <AdvancedFilter filters={filters} masterData={masterData} categories={masterData.categories} onEdit={handleOpenEditModal} onDelete={deleteTransaction} />
         </div>
 
-        {/* TAB 4: PROFİL */}
-        <div className={`${activeTab === 'profil' ? 'flex' : 'hidden'} lg:hidden flex-col items-center justify-center py-20`}>
-          <span className="text-6xl mb-4">👤</span>
-          <h2 className="text-xl font-bold text-slate-500">Profil Sayfası</h2>
-          <p className="text-sm text-slate-400">Çok yakında burada...</p>
+        {/* =========================================================================
+            TAB 4: MOBİL PROFİL SAYFASI (Tam Sayfa Görünüm)
+            ========================================================================= */}
+        <div className={`${activeTab === 'profil' ? 'block' : 'hidden'} lg:hidden pb-10`}>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 animate-fadeIn transition-colors">
+            
+            <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-3xl shadow-inner">👤</div>
+                <div>
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Profilim</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">👋 {localStorage.getItem('wallet_user')}</p>
+                </div>
+            </div>
+
+            <hr className="border-gray-100 dark:border-gray-700 mb-6" />
+
+            <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">🔑 Şifre Değiştir</h3>
+            <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-3">
+                <input type="password" placeholder="Mevcut Şifre" required className="w-full p-3 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-sm border border-transparent dark:border-gray-700 focus:border-blue-500 focus:outline-none transition" onChange={e => setPasswords({...passwords, currentPassword: e.target.value})} value={passwords.currentPassword} />
+                <input type="password" placeholder="Yeni Şifre" required className="w-full p-3 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-sm border border-transparent dark:border-gray-700 focus:border-blue-500 focus:outline-none transition" onChange={e => setPasswords({...passwords, newPassword: e.target.value})} value={passwords.newPassword} />
+                <input type="password" placeholder="Yeni Şifre (Tekrar)" required className="w-full p-3 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-sm border border-transparent dark:border-gray-700 focus:border-blue-500 focus:outline-none transition" onChange={e => setPasswords({...passwords, confirmPassword: e.target.value})} value={passwords.confirmPassword} />
+                
+                {pwError && <p className="text-red-500 text-xs font-medium bg-red-50 dark:bg-red-900/20 p-2 rounded-lg">{pwError}</p>}
+                
+                <button type="submit" disabled={pwLoading} className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-md disabled:opacity-50">
+                    {pwLoading ? 'Kaydediliyor...' : 'Şifreyi Güncelle'}
+                </button>
+            </form>
+
+            <hr className="border-gray-100 dark:border-gray-700 my-6" />
+
+            <button onClick={() => {
+                localStorage.removeItem('wallet_token');
+                localStorage.removeItem('wallet_user');
+                window.location.href = '/login';
+            }} className="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold py-3.5 rounded-xl text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition flex items-center justify-center gap-2">
+                🚪 Çıkış Yap
+            </button>
+          </div>
         </div>
 
         {/* MASAÜSTÜ MANUEL FORM */}
         <div className="hidden lg:block">
-          <TransactionForm
-            masterData={masterData}
-            onAdd={addManualTransaction}
-            loading={manualLoading}
-          />
+          <TransactionForm masterData={masterData} onAdd={addManualTransaction} loading={manualLoading} />
         </div>
       </div>
 
@@ -214,24 +227,15 @@ export default function Home() {
           }`}
           onClick={(e) => e.stopPropagation()}
         >
-          
-          {/* =======================================================
-              SÜRÜKLEME ÇUBUĞU (Drag Handle) VE DOKUNMA ALANI
-              ======================================================= */}
           <div 
             className="w-full flex justify-center pb-6 -mt-2 pt-2 cursor-grab active:cursor-grabbing"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            {/* Orijinal gri çubuğu biraz kalınlaştırdım ve uzattım ki daha "native" dursun (w-16 h-1.5) */}
             <div className="w-16 h-1.5 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
           </div>
           
-          <TransactionForm
-            masterData={masterData}
-            onAdd={handleBottomSheetFormSubmit}
-            loading={manualLoading}
-          />
+          <TransactionForm masterData={masterData} onAdd={handleBottomSheetFormSubmit} loading={manualLoading} />
         </div>
       </div>
 

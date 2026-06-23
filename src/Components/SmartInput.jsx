@@ -13,7 +13,7 @@ export default function SmartInput({
         <>
             {/* 1. KART: AKILLI GİRİŞ */}
             <div className="bg-white dark:bg-gray-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 transition-colors">
-                <h2 className="text-gray-800 dark:text-white font-bold mb-2 lg:mb-4 text-sm lg:text-base">Akıllı Giriş</h2>
+                <h2 className="text-blue-900 dark:text-white font-bold mb-2 lg:mb-4 text-sm lg:text-base">Akıllı Giriş</h2>
                 <input
                     type="text"
                     value={inputText}
@@ -28,7 +28,7 @@ export default function SmartInput({
 
             {/* 2. KART: HIZLI İŞLEM ÇİPLERİ */}
             <div className="bg-white dark:bg-gray-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 transition-colors">
-                <h2 className="text-gray-800 dark:text-white font-bold mb-2 lg:mb-3 text-xs lg:text-sm">Hızlı İşlem (Tek Tık)</h2>
+                <h2 className="text-blue-900 dark:text-white font-bold mb-2 lg:mb-3 text-xs lg:text-sm">Hızlı İşlem (Tek Tık)</h2>
                 {/* Mobilde çiplerin arası daha dar (gap-1.5), masaüstünde normal (lg:gap-2) */}
                 <div className="flex flex-wrap gap-1.5 lg:gap-2">
                     {["Kahve", "File", "Fırın", "Şok", "Opet", "Eczane"].map((chip) => (
