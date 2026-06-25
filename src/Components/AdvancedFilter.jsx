@@ -26,11 +26,11 @@ export default function AdvancedFilter({ filters, masterData, categories, onEdit
 
     return (
         <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 transition-colors">
-            
+
             {/* BAŞLIK (ACCORDION TETİKLEYİCİ) */}
-            <button 
-                type="button" 
-                onClick={() => setIsFilterOpen(!isFilterOpen)} 
+            <button
+                type="button"
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
                 className="w-full flex justify-between items-center text-blue-900 dark:text-gray-100 font-bold mb-2 group"
             >
                 <span className="flex items-center gap-2">🔍 Gelişmiş Harcama Arama</span>
@@ -40,19 +40,26 @@ export default function AdvancedFilter({ filters, masterData, categories, onEdit
             </button>
 
             {/* ARAMA FORMU (Açılır/Kapanır Animasyonlu) */}
-            <div className={`grid transition-all duration-500 ease-in-out ${isFilterOpen ? 'grid-rows-[1fr] opacity-100 mb-4' : 'grid-rows-[0fr] opacity-0 mb-0'}`}>
-                <div className="overflow-hidden">
+            {/* DİKKAT 1: relative z-20 eklendi (Dropdown'lar sonuçların üstüne çıksın diye) */}
+            {/* DİKKAT 2: pointer-events-none eklendi (Kapalıyken tıklamaları engellesin diye) */}
+            <div className={`relative z-20 grid transition-all duration-500 ease-in-out ${isFilterOpen ? 'grid-rows-[1fr] opacity-100 mb-4' : 'grid-rows-[0fr] opacity-0 mb-0 pointer-events-none'}`}>
+
+                {/* DİKKAT 3: Sırf dropdownlar kesilmesin diye isFilterOpen durumuna göre overflow değiştirildi */}
+                <div className={isFilterOpen ? "overflow-visible" : "overflow-hidden"}>
                     <form onSubmit={handleFilterSearch} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-end pt-2">
                         <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Başlangıç</label><input type="date" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} className="p-2 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition" /></div>
                         <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Bitiş</label><input type="date" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} className="p-2 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition" /></div>
+
                         <div className="flex flex-col gap-1">
                             <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Kategori</label>
                             <CategorySelect options={groupedCategories} value={filterCategoryId} onChange={setFilterCategoryId} placeholder="Tümü" />
                         </div>
+
                         <div className="flex flex-col gap-1">
                             <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">İşyeri</label>
                             <SearchableSelect options={getFilteredMerchants(filterCategoryId)} value={filterMerchantId} onChange={setFilterMerchantId} placeholder="Tümü" emptyLabel="Tümü (Seçimi Temizle)" />
                         </div>
+
                         <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Ülke</label><select value={filterCountryId} onChange={e => setFilterCountryId(e.target.value)} className="p-2 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition"><option value="">Tümü</option>{countries.map(c => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}</select></div>
                         <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Döviz</label><select value={filterCurrencyId} onChange={e => setFilterCurrencyId(e.target.value)} className="p-2 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition"><option value="">Tümü</option>{currencies.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}</select></div>
                         <div className="flex gap-2">
@@ -85,8 +92,7 @@ export default function AdvancedFilter({ filters, masterData, categories, onEdit
                                 const subtitleCategory = catObj?.parentCategory?.name || t.categoryName;
                                 return (
                                     <div key={t.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100/70 dark:hover:bg-gray-700 rounded-xl flex items-center justify-between border border-gray-100/50 dark:border-gray-600 transition duration-200 group gap-2">
-                                        
-                                        {/* SOL TARAF (İkon ve Yazılar) - min-w-0 ile sıkışmasını engelliyoruz */}
+
                                         <div className="flex items-center gap-3 min-w-0 flex-1">
                                             <span className="text-lg bg-white dark:bg-gray-800 w-9 h-9 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
                                                 {t.categoryIcon}
@@ -101,14 +107,12 @@ export default function AdvancedFilter({ filters, masterData, categories, onEdit
                                             </div>
                                         </div>
 
-                                        {/* SAĞ TARAF (Tutar ve Butonlar) - Sabit genişlikler kaldırıldı */}
                                         <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                                             <div className="font-bold text-gray-800 dark:text-gray-100 text-sm text-right whitespace-nowrap">
                                                 {t.amount} {t.currencySymbol ? t.currencySymbol : '₺'}
                                                 {t.exchangeRate && t.exchangeRate !== 1 && <div className="text-[9px] text-gray-400 font-normal mt-0.5">Kur: {t.exchangeRate}</div>}
                                             </div>
-                                            
-                                            {/* Butonlar: Mobilde daha minik ve pürüzsüz */}
+
                                             <div className="flex items-center gap-1">
                                                 <button onClick={() => onEdit(t)} className="text-gray-400 dark:text-gray-300 hover:text-blue-600 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-600 p-1 lg:p-1.5 text-[10px] lg:text-xs rounded-lg transition shadow-sm border border-gray-100 dark:border-gray-600" title="Düzenle">✏️</button>
                                                 <button onClick={() => onDelete(t.id)} className="text-gray-400 dark:text-gray-300 hover:text-red-600 bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-gray-600 p-1 lg:p-1.5 text-[10px] lg:text-xs rounded-lg transition shadow-sm border border-gray-100 dark:border-gray-600" title="Sil">🗑️</button>
