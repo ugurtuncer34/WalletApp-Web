@@ -12,10 +12,8 @@ export default function AdvancedFilter({ filters, masterData, categories, onEdit
         filteredTransactions, hasSearched, filterLoading, handleFilterSearch, handleClearFilter
     } = filters;
 
-    // Arama formunun açık/kapalı durumunu tutan state
     const [isFilterOpen, setIsFilterOpen] = useState(true);
 
-    // Arama yapıldığında formu kapat, arama temizlendiğinde formu aç
     useEffect(() => {
         if (hasSearched) {
             setIsFilterOpen(false);
@@ -39,38 +37,37 @@ export default function AdvancedFilter({ filters, masterData, categories, onEdit
                 </span>
             </button>
 
-            {/* ARAMA FORMU (Açılır/Kapanır Animasyonlu) */}
-            {/* DİKKAT 1: relative z-20 eklendi (Dropdown'lar sonuçların üstüne çıksın diye) */}
-            {/* DİKKAT 2: pointer-events-none eklendi (Kapalıyken tıklamaları engellesin diye) */}
+            {/* ARAMA FORMU */}
             <div className={`relative z-20 grid transition-all duration-500 ease-in-out ${isFilterOpen ? 'grid-rows-[1fr] opacity-100 mb-4' : 'grid-rows-[0fr] opacity-0 mb-0 pointer-events-none'}`}>
-
-                {/* DİKKAT 3: Sırf dropdownlar kesilmesin diye isFilterOpen durumuna göre overflow değiştirildi */}
+                {/* overflow-visible çok önemli: dropdown kesilmesin diye */}
                 <div className={isFilterOpen ? "overflow-visible" : "overflow-hidden"}>
-                    <form onSubmit={handleFilterSearch} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-end pt-2">
-                        <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Başlangıç</label><input type="date" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} className="p-2 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition" /></div>
-                        <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Bitiş</label><input type="date" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} className="p-2 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition" /></div>
+                    {/* DİKKAT: grid-cols-2 yapısı. Yatay sıkışmaları tamamen engeller. */}
+                    <form onSubmit={handleFilterSearch} className="grid grid-cols-2 gap-3 items-end pt-2">
+                        <div className="flex flex-col gap-1 col-span-1"><label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Başlangıç</label><input type="date" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} className="p-2.5 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition" /></div>
+                        <div className="flex flex-col gap-1 col-span-1"><label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Bitiş</label><input type="date" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} className="p-2.5 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition" /></div>
 
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 col-span-2">
                             <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Kategori</label>
                             <CategorySelect options={groupedCategories} value={filterCategoryId} onChange={setFilterCategoryId} placeholder="Tümü" />
                         </div>
 
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 col-span-2">
                             <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">İşyeri</label>
                             <SearchableSelect options={getFilteredMerchants(filterCategoryId)} value={filterMerchantId} onChange={setFilterMerchantId} placeholder="Tümü" emptyLabel="Tümü (Seçimi Temizle)" />
                         </div>
 
-                        <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Ülke</label><select value={filterCountryId} onChange={e => setFilterCountryId(e.target.value)} className="p-2 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition"><option value="">Tümü</option>{countries.map(c => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}</select></div>
-                        <div className="flex flex-col gap-1"><label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Döviz</label><select value={filterCurrencyId} onChange={e => setFilterCurrencyId(e.target.value)} className="p-2 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition"><option value="">Tümü</option>{currencies.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}</select></div>
-                        <div className="flex gap-2">
-                            <button type="submit" disabled={filterLoading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-2.5 rounded-xl transition shadow-sm disabled:opacity-50">{filterLoading ? 'Sorgulanıyor...' : 'Sorgula'}</button>
-                            {hasSearched && <button type="button" onClick={handleClearFilter} className="px-4 bg-gray-100 dark:bg-gray-700 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 text-gray-600 dark:text-gray-300 font-bold text-sm py-2.5 rounded-xl transition" title="Aramayı Temizle">✕</button>}
+                        <div className="flex flex-col gap-1 col-span-1"><label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Ülke</label><select value={filterCountryId} onChange={e => setFilterCountryId(e.target.value)} className="p-2.5 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition"><option value="">Tümü</option>{countries.map(c => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}</select></div>
+                        <div className="flex flex-col gap-1 col-span-1"><label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Döviz</label><select value={filterCurrencyId} onChange={e => setFilterCurrencyId(e.target.value)} className="p-2.5 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition"><option value="">Tümü</option>{currencies.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}</select></div>
+
+                        <div className="flex gap-2 col-span-2 mt-2">
+                            <button type="submit" disabled={filterLoading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-xl transition shadow-sm disabled:opacity-50">{filterLoading ? 'Sorgulanıyor...' : 'Sorgula'}</button>
+                            {hasSearched && <button type="button" onClick={handleClearFilter} className="px-4 bg-gray-100 dark:bg-gray-700 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 text-gray-600 dark:text-gray-300 font-bold text-sm py-3 rounded-xl transition" title="Aramayı Temizle">✕</button>}
                         </div>
                     </form>
                 </div>
             </div>
 
-            {/* SORGU SONUÇLARI (Yağ gibi açılıp kapanan geçiş) */}
+            {/* SORGU SONUÇLARI */}
             <div className={`grid transition-all duration-500 ease-in-out ${hasSearched ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                 <div className="overflow-hidden">
                     <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
@@ -78,7 +75,6 @@ export default function AdvancedFilter({ filters, masterData, categories, onEdit
                             <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider">
                                 Sorgu Sonuçları ({filteredTransactions.length} Eşleşme)
                             </h4>
-                            {/* Mobilde form kapalıyken formu geri açma butonu */}
                             {!isFilterOpen && (
                                 <button onClick={() => setIsFilterOpen(true)} className="text-xs text-blue-500 font-semibold hover:underline">
                                     Filtreyi Değiştir
@@ -86,7 +82,8 @@ export default function AdvancedFilter({ filters, masterData, categories, onEdit
                             )}
                         </div>
 
-                        <div className="max-h-[500px] overflow-y-auto space-y-2 pr-1 lg:pr-2 scrollbar-hide">
+                        {/* max-h-[60vh] ile drawer içinde rahatça scroll edebilmesi sağlandı */}
+                        <div className="max-h-[60vh] lg:max-h-[75vh] overflow-y-auto space-y-2 pr-1 lg:pr-2 scrollbar-hide">
                             {filteredTransactions.map((t) => {
                                 const catObj = categories.find(c => c.name === t.categoryName);
                                 const subtitleCategory = catObj?.parentCategory?.name || t.categoryName;

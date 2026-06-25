@@ -12,11 +12,12 @@ export default function DashboardView({
     dashboardMonth,
     setDashboardMonth,
     dashboardYear,
-    setDashboardYear
+    setDashboardYear,
+    onOpenSearch,
+    onOpenForm
 }) {
     const { isDarkMode } = useTheme();
 
-    // Chart renklerini karanlık moda göre ayarla
     const gridColor = isDarkMode ? '#374151' : '#f3f4f6';
     const textColor = isDarkMode ? '#9ca3af' : '#9ca3af';
     const tooltipStyle = {
@@ -31,17 +32,16 @@ export default function DashboardView({
         <div className="flex flex-col gap-4 lg:gap-6">
 
             {/* ==========================================
-                1. KOMPAKT FİLTRE VE TOPLAM HARCAMA ALANI
-                Mobilde alt alta dar, Masaüstünde yan yana geniş
+                1. KOMPAKT FİLTRE, TOPLAM HARCAMA VE ALT ALTA BUTONLAR
                 ========================================== */}
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-blue-50 dark:bg-blue-800 rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-[0_2px_10px_-3px_rgba(37,99,235,0.1)] border border-blue-100 dark:border-blue-600 text-blue-900 dark:text-blue-50 gap-4 transition-colors">
+            <div className="flex flex-col xl:flex-row justify-between items-center bg-blue-50 dark:bg-blue-700 rounded-2xl lg:rounded-3xl p-4 lg:p-5 shadow-[0_2px_10px_-3px_rgba(37,99,235,0.1)] border border-blue-100 dark:border-blue-600 text-blue-900 dark:text-white gap-4 transition-colors">
 
-                {/* Sol Taraf: Filtre */}
-                <div className="flex gap-2 w-full sm:w-auto">
+                {/* SOL TARAF: Filtreler */}
+                <div className="flex gap-2 w-full xl:w-auto">
                     <select
                         value={dashboardMonth}
                         onChange={(e) => setDashboardMonth(Number(e.target.value))}
-                        className="flex-1 sm:w-32 p-2 bg-white dark:bg-blue-950 border border-blue-200 dark:border-blue-700 text-blue-900 dark:text-blue-100 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer shadow-sm"
+                        className="flex-1 xl:w-32 p-2 bg-white dark:bg-blue-800 border border-blue-200 dark:border-blue-500 text-blue-900 dark:text-blue-50 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer shadow-sm"
                     >
                         <option value={1}>Ocak</option><option value={2}>Şubat</option><option value={3}>Mart</option>
                         <option value={4}>Nisan</option><option value={5}>Mayıs</option><option value={6}>Haziran</option>
@@ -52,7 +52,7 @@ export default function DashboardView({
                     <select
                         value={dashboardYear}
                         onChange={(e) => setDashboardYear(Number(e.target.value))}
-                        className="flex-1 sm:w-28 p-2 bg-white dark:bg-blue-950 border border-blue-200 dark:border-blue-700 text-blue-900 dark:text-blue-100 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer shadow-sm"
+                        className="flex-1 xl:w-28 p-2 bg-white dark:bg-blue-800 border border-blue-200 dark:border-blue-500 text-blue-900 dark:text-blue-50 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer shadow-sm"
                     >
                         <option value={2024}>2024</option>
                         <option value={2025}>2025</option>
@@ -61,13 +61,40 @@ export default function DashboardView({
                     </select>
                 </div>
 
-                {/* Sağ Taraf: Toplam Harcama */}
-                <div className="text-center sm:text-right w-full sm:w-auto">
-                    <p className="text-blue-600/70 dark:text-blue-300 text-xs font-bold uppercase tracking-wider mb-1">Bu Ayki Toplam Harcama</p>
-                    <h2 className="text-3xl lg:text-4xl font-black tracking-tight flex items-baseline justify-center sm:justify-end gap-1">
-                        {dashboard?.totalMonthlyExpense?.toLocaleString('tr-TR')}
-                        <span className="text-lg opacity-60 font-medium">₺</span>
-                    </h2>
+                {/* SAĞ TARAF: Harcama Tutarı + Ayrıcı Çizgi + Alt Alta Butonlar */}
+                <div className="flex flex-col sm:flex-row items-center gap-4 xl:gap-6 w-full xl:w-auto mt-2 xl:mt-0 justify-center xl:justify-end">
+
+                    {/* Toplam Harcama */}
+                    <div className="text-center sm:text-right w-full sm:w-auto">
+                        <p className="text-blue-600/70 dark:text-blue-200/80 text-[10px] xl:text-xs font-bold uppercase tracking-wider mb-1">Bu Ayki Toplam Harcama</p>
+                        <h2 className="text-3xl lg:text-4xl font-black tracking-tight flex items-baseline justify-center sm:justify-end gap-1">
+                            {dashboard?.totalMonthlyExpense?.toLocaleString('tr-TR')}
+                            <span className="text-lg opacity-60 font-medium">₺</span>
+                        </h2>
+                    </div>
+
+                    {/* Dikey Ayırıcı Çizgi (Tutar ve Butonları Ayırır - Sadece Masaüstü) */}
+                    {onOpenSearch && onOpenForm && (
+                        <div className="hidden lg:block w-px h-16 bg-blue-200 dark:bg-blue-500/50"></div>
+                    )}
+
+                    {/* MASAÜSTÜ AKSİYON BUTONLARI (flex-col ile Alt Alta ve ESKİ STİLLERİYLE) */}
+                    {onOpenSearch && onOpenForm && (
+                        <div className="hidden lg:flex flex-col gap-2 w-full sm:w-[170px]">
+                            <button
+                                onClick={onOpenSearch}
+                                className="w-full px-4 py-2 bg-blue-50 dark:bg-blue-800 rounded-xl shadow-sm border border-blue-200 dark:border-blue-600 text-xs font-bold text-blue-700 dark:text-blue-50 hover:bg-blue-100 dark:hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                            >
+                                🔍 Gelişmiş Arama
+                            </button>
+                            <button
+                                onClick={onOpenForm}
+                                className="w-full px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-800 dark:hover:bg-blue-700 text-blue-700 dark:text-blue-50 border border-blue-200 dark:border-blue-600 rounded-xl shadow-sm text-xs font-bold transition flex items-center justify-center gap-2"
+                            >
+                                ✍️ Manuel Ekle
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -21,8 +21,12 @@ export default function Home() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editInitialData, setEditInitialData] = useState(null);
 
-  const [activeTab, setActiveTab] = useState('home'); 
+  const [activeTab, setActiveTab] = useState('home');
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+
+  // --- MASAÜSTÜ DRAWER (KAYAN PANEL) STATE'LERİ ---
+  const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false);
+  const [isDesktopFormOpen, setIsDesktopFormOpen] = useState(false);
 
   // --- MOBİL PROFİL SAYFASI İÇİN STATE'LER ---
   const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -31,9 +35,7 @@ export default function Home() {
 
   // --- BOTTOM SHEET SÜRÜKLEME (SWIPE) STATE'İ ---
   const [touchStartY, setTouchStartY] = useState(null);
-
   const handleTouchStart = (e) => setTouchStartY(e.touches[0].clientY);
-
   const handleTouchEnd = (e) => {
     if (touchStartY === null) return;
     const distance = e.changedTouches[0].clientY - touchStartY;
@@ -70,7 +72,7 @@ export default function Home() {
 
   const handleChipClick = (chipWord) => {
     setSelectedChip(chipWord);
-    setIsBottomSheetOpen(false); 
+    setIsBottomSheetOpen(false);
     setIsQuickModalOpen(true);
   };
 
@@ -112,32 +114,37 @@ export default function Home() {
     if (res.success) setIsBottomSheetOpen(false);
   };
 
-  // --- MOBİL ŞİFRE DEĞİŞTİRME HANDLER ---
+  const handleDesktopManualSubmit = async (payload) => {
+    const res = await addManualTransaction(payload);
+    if (res.success) setIsDesktopFormOpen(false);
+    return res;
+  };
+
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (passwords.newPassword !== passwords.confirmPassword) {
-        setPwError("Yeni şifreler eşleşmiyor!");
-        return;
+      setPwError("Yeni şifreler eşleşmiyor!");
+      return;
     }
     setPwLoading(true); setPwError(null);
     try {
-        const token = localStorage.getItem('wallet_token');
-        const API_BASE = import.meta.env.VITE_API_BASE_URL;
-        const response = await fetch(`${API_BASE}/Auth/change-password`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ currentPassword: passwords.currentPassword, newPassword: passwords.newPassword })
-        });
-        if (response.ok) {
-            alert("Şifre başarıyla değiştirildi!");
-            setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        } else {
-            setPwError("Şifre değiştirilemedi. Mevcut şifrenizi kontrol edin.");
-        }
+      const token = localStorage.getItem('wallet_token');
+      const API_BASE = import.meta.env.VITE_API_BASE_URL;
+      const response = await fetch(`${API_BASE}/Auth/change-password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: passwords.currentPassword, newPassword: passwords.newPassword })
+      });
+      if (response.ok) {
+        alert("Şifre başarıyla değiştirildi!");
+        setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        setPwError("Şifre değiştirilemedi. Mevcut şifrenizi kontrol edin.");
+      }
     } catch (err) {
-        setPwError("Sunucu hatası. Bağlantınızı kontrol edin.");
+      setPwError("Sunucu hatası. Bağlantınızı kontrol edin.");
     } finally {
-        setPwLoading(false);
+      setPwLoading(false);
     }
   };
 
@@ -148,7 +155,7 @@ export default function Home() {
       <EditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} initialData={editInitialData} masterData={masterData} onSubmit={handleEditSubmit} loading={editLoading} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
-        
+
         {/* TAB 1: ANA SAYFA */}
         <div className={`${activeTab === 'home' ? 'flex' : 'hidden'} lg:flex flex-col gap-4 lg:gap-6 lg:col-span-4`}>
           <SmartInput inputText={inputText} setInputText={setInputText} onQuickAdd={handleSmartInputSubmit} loading={quickLoading} onChipClick={handleChipClick} />
@@ -157,121 +164,139 @@ export default function Home() {
 
         {/* TAB 2: GRAFİK */}
         <div className={`${activeTab === 'grafik' ? 'flex' : 'hidden'} lg:flex flex-col gap-4 lg:gap-6 lg:col-span-8`}>
-          <DashboardView dashboard={dashboardInfo.dashboard} dashboardMonth={dashboardInfo.dashboardMonth} setDashboardMonth={dashboardInfo.setDashboardMonth} dashboardYear={dashboardInfo.dashboardYear} setDashboardYear={dashboardInfo.setDashboardYear} />
+          <DashboardView
+            dashboard={dashboardInfo.dashboard}
+            dashboardMonth={dashboardInfo.dashboardMonth}
+            setDashboardMonth={dashboardInfo.setDashboardMonth}
+            dashboardYear={dashboardInfo.dashboardYear}
+            setDashboardYear={dashboardInfo.setDashboardYear}
+            onOpenSearch={() => setIsDesktopSearchOpen(true)}
+            onOpenForm={() => setIsDesktopFormOpen(true)}
+          />
         </div>
       </div>
 
+      {/* SADECE MOBİL İÇİN OLAN ALT KISIMLAR */}
       <div className="grid grid-cols-1 gap-8 mt-0 lg:mt-4">
-        {/* TAB 3: ARA */}
-        <div className={`${activeTab === 'ara' ? 'block' : 'hidden'} lg:block`}>
+        {/* TAB 3: ARA (SADECE MOBİL) */}
+        <div className={`${activeTab === 'ara' ? 'block' : 'hidden'} lg:hidden`}>
           <AdvancedFilter filters={filters} masterData={masterData} categories={masterData.categories} onEdit={handleOpenEditModal} onDelete={deleteTransaction} />
         </div>
 
-        {/* =========================================================================
-            TAB 4: MOBİL PROFİL SAYFASI (Tam Sayfa Görünüm)
-            ========================================================================= */}
+        {/* TAB 4: MOBİL PROFİL */}
         <div className={`${activeTab === 'profil' ? 'block' : 'hidden'} lg:hidden pb-10`}>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 animate-fadeIn transition-colors">
-            
             <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-3xl shadow-inner">👤</div>
-                <div>
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Profilim</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">👋 {localStorage.getItem('wallet_user')}</p>
-                </div>
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-3xl shadow-inner">👤</div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">Profilim</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">👋 {localStorage.getItem('wallet_user')}</p>
+              </div>
             </div>
-
             <hr className="border-gray-100 dark:border-gray-700 mb-6" />
-
             <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">🔑 Şifre Değiştir</h3>
             <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-3">
-                <input type="password" placeholder="Mevcut Şifre" required className="w-full p-3 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-sm border border-transparent dark:border-gray-700 focus:border-blue-500 focus:outline-none transition" onChange={e => setPasswords({...passwords, currentPassword: e.target.value})} value={passwords.currentPassword} />
-                <input type="password" placeholder="Yeni Şifre" required className="w-full p-3 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-sm border border-transparent dark:border-gray-700 focus:border-blue-500 focus:outline-none transition" onChange={e => setPasswords({...passwords, newPassword: e.target.value})} value={passwords.newPassword} />
-                <input type="password" placeholder="Yeni Şifre (Tekrar)" required className="w-full p-3 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-sm border border-transparent dark:border-gray-700 focus:border-blue-500 focus:outline-none transition" onChange={e => setPasswords({...passwords, confirmPassword: e.target.value})} value={passwords.confirmPassword} />
-                
-                {pwError && <p className="text-red-500 text-xs font-medium bg-red-50 dark:bg-red-900/20 p-2 rounded-lg">{pwError}</p>}
-                
-                <button type="submit" disabled={pwLoading} className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-md disabled:opacity-50">
-                    {pwLoading ? 'Kaydediliyor...' : 'Şifreyi Güncelle'}
-                </button>
+              <input type="password" placeholder="Mevcut Şifre" required className="w-full p-3 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-sm border border-transparent dark:border-gray-700 focus:border-blue-500 focus:outline-none transition" onChange={e => setPasswords({ ...passwords, currentPassword: e.target.value })} value={passwords.currentPassword} />
+              <input type="password" placeholder="Yeni Şifre" required className="w-full p-3 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-sm border border-transparent dark:border-gray-700 focus:border-blue-500 focus:outline-none transition" onChange={e => setPasswords({ ...passwords, newPassword: e.target.value })} value={passwords.newPassword} />
+              <input type="password" placeholder="Yeni Şifre (Tekrar)" required className="w-full p-3 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl text-sm border border-transparent dark:border-gray-700 focus:border-blue-500 focus:outline-none transition" onChange={e => setPasswords({ ...passwords, confirmPassword: e.target.value })} value={passwords.confirmPassword} />
+              {pwError && <p className="text-red-500 text-xs font-medium bg-red-50 dark:bg-red-900/20 p-2 rounded-lg">{pwError}</p>}
+              <button type="submit" disabled={pwLoading} className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-md disabled:opacity-50">
+                {pwLoading ? 'Kaydediliyor...' : 'Şifreyi Güncelle'}
+              </button>
             </form>
-
             <hr className="border-gray-100 dark:border-gray-700 my-6" />
-
-            <button onClick={() => {
-                localStorage.removeItem('wallet_token');
-                localStorage.removeItem('wallet_user');
-                window.location.href = '/login';
-            }} className="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold py-3.5 rounded-xl text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition flex items-center justify-center gap-2">
-                🚪 Çıkış Yap
+            <button onClick={() => { localStorage.removeItem('wallet_token'); localStorage.removeItem('wallet_user'); window.location.href = '/login'; }} className="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold py-3.5 rounded-xl text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition flex items-center justify-center gap-2">
+              🚪 Çıkış Yap
             </button>
           </div>
         </div>
+      </div>
 
-        {/* MASAÜSTÜ MANUEL FORM */}
-        <div className="hidden lg:block">
-          <TransactionForm masterData={masterData} onAdd={addManualTransaction} loading={manualLoading} />
+      {/* =======================================================
+          MASAÜSTÜ SAĞDAN KAYAN PANELLER (DRAWER - SADECE DESKTOP)
+          ======================================================= */}
+      {/* Drawer Ortak Arka Plan (Backdrop) */}
+      <div
+        className={`hidden lg:block fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm z-[60] transition-opacity duration-300 ${isDesktopSearchOpen || isDesktopFormOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
+        onClick={() => { setIsDesktopSearchOpen(false); setIsDesktopFormOpen(false); }}
+      ></div>
+
+      {/* 1. Gelişmiş Arama Paneli */}
+      <div className={`hidden lg:block fixed top-0 right-0 h-full w-[450px] bg-slate-50 dark:bg-slate-950 z-[70] shadow-[-10px_0_40px_rgba(0,0,0,0.2)] border-l border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-out ${isDesktopSearchOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}>
+
+        {/* SABİT KAPATMA BUTONU (Kaydırmadan etkilenmez, panelin köşesinde durur) */}
+        <button
+          onClick={() => setIsDesktopSearchOpen(false)}
+          className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 dark:bg-slate-800 text-gray-500 hover:text-gray-800 dark:hover:text-white transition z-50 shadow-sm"
+        >
+          ✕
+        </button>
+
+        {/* KAYDIRILABİLİR İÇERİK (Butonun altında kalması için pt-16 eklendi) */}
+        <div className="h-full w-full overflow-y-auto scrollbar-hide p-5 pt-16">
+          <AdvancedFilter filters={filters} masterData={masterData} categories={masterData.categories} onEdit={handleOpenEditModal} onDelete={deleteTransaction} />
         </div>
       </div>
 
-      {/* BOTTOM SHEET MODAL (Sadece Detaylı Ekleme) */}
-      <div 
-        className={`lg:hidden fixed inset-0 z-[60] flex justify-center items-end bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
-          isBottomSheetOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
+      {/* 2. Manuel Ekleme Paneli */}
+      <div className={`hidden lg:block fixed top-0 right-0 h-full w-[450px] bg-slate-50 dark:bg-slate-950 z-[70] shadow-[-10px_0_40px_rgba(0,0,0,0.2)] border-l border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-out ${isDesktopFormOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}>
+
+        {/* SABİT KAPATMA BUTONU (Kaydırmadan etkilenmez, panelin köşesinde durur) */}
+        <button
+          onClick={() => setIsDesktopFormOpen(false)}
+          className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 dark:bg-slate-800 text-gray-500 hover:text-gray-800 dark:hover:text-white transition z-50 shadow-sm"
+        >
+          ✕
+        </button>
+
+        {/* KAYDIRILABİLİR İÇERİK (Butonun altında kalması için pt-16 eklendi) */}
+        <div className="h-full w-full overflow-y-auto scrollbar-hide p-5 pt-16">
+          <TransactionForm masterData={masterData} onAdd={handleDesktopManualSubmit} loading={manualLoading} />
+        </div>
+      </div>
+
+      {/* MOBİL BOTTOM SHEET MODAL (Sadece Detaylı Ekleme) */}
+      <div
+        className={`lg:hidden fixed inset-0 z-[60] flex justify-center items-end bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isBottomSheetOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
         onClick={() => setIsBottomSheetOpen(false)}
       >
-        <div 
-          className={`bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 pb-12 max-h-[85vh] overflow-y-auto shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transform transition-transform duration-300 ease-out ${
-            isBottomSheetOpen ? "translate-y-0" : "translate-y-full"
-          }`}
+        <div
+          className={`bg-white dark:bg-slate-900 w-full rounded-t-3xl p-6 pb-12 max-h-[85vh] overflow-y-auto shadow-[0_-10px_40px_rgba(0,0,0,0.3)] transform transition-transform duration-300 ease-out ${isBottomSheetOpen ? "translate-y-0" : "translate-y-full"
+            }`}
           onClick={(e) => e.stopPropagation()}
         >
-          <div 
-            className="w-full flex justify-center pb-6 -mt-2 pt-2 cursor-grab active:cursor-grabbing"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
+          <div className="w-full flex justify-center pb-6 -mt-2 pt-2 cursor-grab active:cursor-grabbing" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
             <div className="w-16 h-1.5 bg-gray-300 dark:bg-slate-700 rounded-full"></div>
           </div>
-          
           <TransactionForm masterData={masterData} onAdd={handleBottomSheetFormSubmit} loading={manualLoading} />
         </div>
       </div>
 
       {/* MOBİL ALT MENÜ (TAB BAR) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-gray-200 dark:border-slate-800 flex justify-around items-center h-16 z-40 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.1)]">
-        
         <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'home' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'}`}>
           <span className="text-2xl mb-1">{activeTab === 'home' ? '🏠' : '🛖'}</span>
           <span className="text-[10px] font-bold">Ana Sayfa</span>
         </button>
-
         <button onClick={() => setActiveTab('grafik')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'grafik' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'}`}>
           <span className="text-2xl mb-1">📊</span>
           <span className="text-[10px] font-bold">Grafik</span>
         </button>
-
-        {/* GÖBEKTEKİ EFSANE FAB BUTONU */}
         <div className="relative -top-6">
-          <button 
-            onClick={() => setIsBottomSheetOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg shadow-blue-600/40 text-3xl font-light transition-transform active:scale-95"
-          >
-            +
-          </button>
+          <button onClick={() => setIsBottomSheetOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg shadow-blue-600/40 text-3xl font-light transition-transform active:scale-95">+</button>
         </div>
-
         <button onClick={() => setActiveTab('ara')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'ara' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'}`}>
           <span className="text-2xl mb-1">🔍</span>
           <span className="text-[10px] font-bold">Ara</span>
         </button>
-
         <button onClick={() => setActiveTab('profil')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'profil' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'}`}>
           <span className="text-2xl mb-1">👤</span>
           <span className="text-[10px] font-bold">Profil</span>
         </button>
-
       </div>
     </div>
   );
