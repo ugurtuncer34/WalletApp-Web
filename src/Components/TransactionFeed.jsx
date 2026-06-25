@@ -34,8 +34,7 @@ export default function TransactionFeed({
     };
 
     return (
-        // DİKKAT: Eski sağlam yükseklikler (h-[400px] xl:h-[550px]) geri geldi!
-        <div className="bg-white dark:bg-gray-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 flex flex-col h-[400px] xl:h-[550px] transition-colors relative">
+        <div className="bg-white dark:bg-gray-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 flex flex-col w-full h-full overflow-hidden transition-colors relative">
             
             <h2 className="text-blue-900 dark:text-white font-bold mb-3 lg:mb-4 flex justify-between items-center text-sm lg:text-base">
                 <span>Son İşlemler (Canlı Akış)</span>
