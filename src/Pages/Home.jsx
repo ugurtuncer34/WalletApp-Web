@@ -157,19 +157,14 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start lg:items-stretch">
 
         {/* TAB 1: ANA SAYFA */}
-        {/* DİKKAT: h-[calc(100dvh-170px)] ile ekran boyu sadece Navbar ve Tab Bar arasına kilitlendi */}
         <div className={`${activeTab === 'home' ? 'flex' : 'hidden'} lg:flex flex-col gap-4 lg:gap-6 lg:col-span-4 h-[calc(100dvh-170px)] lg:h-auto`}>
-          
-          {/* SmartInput: flex-shrink-0 ile ezilmesi engellendi, kendi boyu kadar yer kaplar */}
-            <SmartInput inputText={inputText} setInputText={setInputText} onQuickAdd={handleSmartInputSubmit} loading={quickLoading} onChipClick={handleChipClick} />
-          
-          {/* TransactionFeed: flex-1 min-h-0 ile kalan tüm boşluğu (milimetrik olarak Tab Bar'a kadar) doldurur */}
+          <SmartInput inputText={inputText} setInputText={setInputText} onQuickAdd={handleSmartInputSubmit} loading={quickLoading} onChipClick={handleChipClick} />
           <div className="flex-1 min-h-0 lg:relative">
             <div className="h-full w-full lg:absolute lg:inset-0">
               <TransactionFeed transactions={transactions} categories={masterData.categories} hasMore={hasMore} onLoadMore={() => fetchTransactions(page + 1)} onEdit={handleOpenEditModal} onDelete={deleteTransaction} />
             </div>
           </div>
-          
+
         </div>
 
         {/* TAB 2: GRAFİK */}
