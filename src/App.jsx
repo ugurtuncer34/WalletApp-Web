@@ -40,7 +40,7 @@ function Navbar({onProfileClick}) {
   const accentColor = isDarkMode ? "text-blue-400" : "text-blue-600";
 
   return (
-    <nav className={`sticky top-0 z-50 ${navBg} backdrop-blur-md border-b ${borderCol} px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:mb-2 lg:mb-4 shadow-sm transition-colors duration-300`}>
+    <nav className={`sticky top-0 z-50 ${navBg} backdrop-blur-md border-b ${borderCol} px-4 pb-3 pt-[calc(env(safe-area-inset-top)-0.25rem)] sm:mb-2 lg:mb-4 shadow-sm transition-colors duration-300`}>
       <div className="max-w-3xl mx-auto flex justify-between items-center">
         <Link to="/" className={`text-lg sm:text-xl font-bold ${accentColor} tracking-tight`}>
           FamilyFinance ⚡
