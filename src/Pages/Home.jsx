@@ -12,6 +12,7 @@ import SmartInput from '../Components/SmartInput';
 import TransactionForm from '../Components/TransactionForm';
 import AdvancedFilter from '../Components/AdvancedFilter';
 import { QuickAddModal, EditModal } from '../Components/TransactionModals';
+import LogoutConfirmModal from '../Components/LogoutConfirmModal';
 
 export default function Home() {
   const [inputText, setInputText] = useState("");
@@ -33,6 +34,8 @@ export default function Home() {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState(null);
 
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
   // --- BOTTOM SHEET SÜRÜKLEME (SWIPE) STATE'İ ---
   const [touchStartY, setTouchStartY] = useState(null);
   const handleTouchStart = (e) => setTouchStartY(e.touches[0].clientY);
@@ -41,6 +44,12 @@ export default function Home() {
     const distance = e.changedTouches[0].clientY - touchStartY;
     if (distance > 50) setIsBottomSheetOpen(false);
     setTouchStartY(null);
+  };
+
+  const handleLogoutConfirm = () => {
+    localStorage.removeItem('wallet_token');
+    localStorage.removeItem('wallet_user');
+    window.location.href = '/login';
   };
 
   const masterData = useMasterData();
@@ -210,7 +219,9 @@ export default function Home() {
               </button>
             </form>
             <hr className="border-gray-100 dark:border-gray-700 my-6" />
-            <button onClick={() => { localStorage.removeItem('wallet_token'); localStorage.removeItem('wallet_user'); window.location.href = '/login'; }} className="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold py-3.5 rounded-xl text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition flex items-center justify-center gap-2">
+            <button
+              onClick={() => setIsLogoutModalOpen(true)}
+              className="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold py-3.5 rounded-xl text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition flex items-center justify-center gap-2">
               🚪 Çıkış Yap
             </button>
           </div>
@@ -280,6 +291,12 @@ export default function Home() {
           <TransactionForm masterData={masterData} onAdd={handleBottomSheetFormSubmit} loading={manualLoading} />
         </div>
       </div>
+
+      <LogoutConfirmModal 
+        isOpen={isLogoutModalOpen} 
+        onClose={() => setIsLogoutModalOpen(false)} 
+        onConfirm={handleLogoutConfirm} 
+      />
 
       {/* MOBİL ALT MENÜ (TAB BAR) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-gray-200 dark:border-slate-800 flex justify-around items-center h-16 z-40 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.1)]">

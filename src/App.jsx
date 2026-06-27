@@ -5,6 +5,7 @@ import Home from './Pages/Home';
 import MasterData from './Pages/MasterData';
 import Login from './Pages/Login';
 import ProfileModal from './Components/ProfileModal';
+import LogoutConfirmModal from './Components/LogoutConfirmModal';
 
 const getUserRole = () => {
   const token = localStorage.getItem('wallet_token');
@@ -22,6 +23,9 @@ function Navbar({onProfileClick}) {
   const { isDarkMode, toggleTheme } = useTheme();
   const token = localStorage.getItem('wallet_token');
   const user = localStorage.getItem('wallet_user');
+  
+  // YENİ: Çıkış modalı state'i
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const role = getUserRole();
   const isAdmin = role === "Admin";
@@ -40,43 +44,53 @@ function Navbar({onProfileClick}) {
   const accentColor = isDarkMode ? "text-blue-400" : "text-blue-600";
 
   return (
-    <nav className={`sticky top-0 z-50 ${navBg} backdrop-blur-md border-b ${borderCol} px-4 pb-3 pt-[calc(env(safe-area-inset-top)-0.25rem)] sm:mb-2 lg:mb-4 shadow-sm transition-colors duration-300`}>
-      <div className="max-w-3xl mx-auto flex justify-between items-center">
-        <Link to="/" className={`text-lg sm:text-xl font-bold ${accentColor} tracking-tight`}>
-          FamilyFinance ⚡
-        </Link>
+    <>
+      <LogoutConfirmModal 
+        isOpen={isLogoutModalOpen} 
+        onClose={() => setIsLogoutModalOpen(false)} 
+        onConfirm={handleLogout} 
+      />
 
-        <div className="flex gap-3 sm:gap-5 items-center">
-          <Link to="/" className={`text-sm font-medium ${textColor} hover:text-blue-500`}>
-             <span className="hidden sm:inline">Ana Sayfa</span>
-             <span className="sm:hidden">🏠</span>
+      {/* DİKKAT: pb-3 pt-[...] kuralını sadece mobilde kullanıp, masaüstünde lg:py-3 ile eziyoruz */}
+      <nav className={`sticky top-0 z-50 ${navBg} backdrop-blur-md border-b ${borderCol} px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.25rem)] lg:py-3 sm:mb-2 lg:mb-4 shadow-sm transition-colors duration-300`}>
+        <div className="max-w-3xl mx-auto flex justify-between items-center">
+          <Link to="/" className={`text-lg sm:text-xl font-bold ${accentColor} tracking-tight`}>
+            FamilyFinance ⚡
           </Link>
 
-          {isAdmin && (
-            <Link to="/master-data" className="text-sm font-medium text-purple-500 hover:text-purple-400">
-              <span className="hidden sm:inline">Röntgen 🛡️</span>
-              <span className="sm:hidden">🛡️</span>
+          <div className="flex gap-3 sm:gap-5 items-center">
+            <Link to="/" className={`text-sm font-medium ${textColor} hover:text-blue-500`}>
+              <span className="hidden sm:inline">Ana Sayfa</span>
+              <span className="sm:hidden">🏠</span>
             </Link>
-          )}
 
-          <button onClick={toggleTheme} className={`p-2 rounded-full ${isDarkMode ? "hover:bg-slate-800" : "hover:bg-gray-200"}`}>
-            {isDarkMode ? '☀️' : '🌙'}
-          </button>
+            {isAdmin && (
+              <Link to="/master-data" className="text-sm font-medium text-purple-500 hover:text-purple-400">
+                <span className="hidden sm:inline">Röntgen 🛡️</span>
+                <span className="sm:hidden">🛡️</span>
+              </Link>
+            )}
 
-          <span 
-            className="text-xs sm:text-sm text-gray-400 hidden sm:inline cursor-pointer hover:text-blue-500 transition" 
-            onClick={onProfileClick} // <-- Burada artık tanımlı
-          >
-            👋 {user}
-          </span>
+            <button onClick={toggleTheme} className={`p-2 rounded-full ${isDarkMode ? "hover:bg-slate-800" : "hover:bg-gray-200"}`}>
+              {isDarkMode ? '☀️' : '🌙'}
+            </button>
 
-          <button onClick={handleLogout} className="text-sm font-medium text-red-500 hover:text-red-700">
-            <span className="hidden sm:inline">Çıkış</span>
-            <span className="sm:hidden text-lg">🚪</span>
-          </button>
+            <span 
+              className="text-xs sm:text-sm text-gray-400 hidden sm:inline cursor-pointer hover:text-blue-500 transition" 
+              onClick={onProfileClick}
+            >
+              👋 {user}
+            </span>
+
+            {/* YENİ: Artık direkt handleLogout çağırmıyor, Modalı açıyor */}
+            <button onClick={() => setIsLogoutModalOpen(true)} className="text-sm font-medium text-red-500 hover:text-red-700">
+              <span className="hidden sm:inline">Çıkış</span>
+              <span className="sm:hidden text-lg">🚪</span>
+            </button>
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 }
 
