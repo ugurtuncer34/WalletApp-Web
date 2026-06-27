@@ -4,6 +4,7 @@ import {
 } from 'recharts';
 import { formatChartDate } from '../utils/dateHelpers';
 import { useTheme } from '../context/ThemeContext';
+import { useState, useEffect } from 'react';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
@@ -17,6 +18,12 @@ export default function DashboardView({
     onOpenForm
 }) {
     const { isDarkMode } = useTheme();
+
+    const [selectedParent, setSelectedParent] = useState(null);
+
+    useEffect(() => {
+        setSelectedParent(null);
+    }, [dashboard]);
 
     const gridColor = isDarkMode ? '#374151' : '#f3f4f6';
     const textColor = isDarkMode ? '#9ca3af' : '#9ca3af';
@@ -124,28 +131,92 @@ export default function DashboardView({
                     {/* KATEGORİ DAĞILIMI VE İŞYERLERİ (Yan yana veya alt alta) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
 
-                        {/* KATEGORİ DAĞILIMI (PIE) */}
-                        <div className="bg-white dark:bg-slate-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-slate-700 flex flex-col transition-colors">
-                            <h3 className="text-blue-900 dark:text-gray-100 font-bold mb-2 text-sm lg:text-base">Kategori Dağılımı</h3>
-                            <div className="flex-1 h-[200px] lg:h-[300px]">
-                                {dashboard.categoryDistribution?.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie data={dashboard.categoryDistribution} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value" nameKey="label" stroke="none">
-                                                {dashboard.categoryDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                                            </Pie>
-                                            <Tooltip formatter={(value, name) => [`${value} ₺`, name]} contentStyle={tooltipStyle} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                ) : <div className="h-full flex items-center justify-center text-gray-400 text-sm">Veri yok.</div>}
+                        {/* KATEGORİ DAĞILIMI (PIE - DRILL DOWN) */}
+                        <div className="bg-white dark:bg-slate-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-slate-700 flex flex-col transition-colors relative">
+
+                            <div className="flex justify-between items-center mb-2">
+                                <h3 className="text-blue-900 dark:text-gray-100 font-bold text-sm lg:text-base">
+                                    {selectedParent ? `${selectedParent} Detayı` : 'Kategori Dağılımı'}
+                                </h3>
+
+                                {/* Eğer alt kategoriye girilmişse "Geri" butonu göster */}
+                                {selectedParent && (
+                                    <button
+                                        onClick={() => setSelectedParent(null)}
+                                        className="text-[10px] lg:text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-slate-700 px-2 py-1 rounded-lg hover:bg-blue-100 dark:hover:bg-slate-600 transition"
+                                    >
+                                        ← Geri Dön
+                                    </button>
+                                )}
                             </div>
+
+                            <div className="flex-1 h-[200px] lg:h-[300px]">
+                                {/* Gösterilecek veriyi dinamik seçiyoruz: Ana kategoriler mi, yoksa seçilenin alt kategorileri mi? */}
+                                {(() => {
+                                    const currentData = selectedParent
+                                        ? dashboard.categoryDistribution.find(c => c.label === selectedParent)?.subCategories || []
+                                        : dashboard.categoryDistribution;
+
+                                    if (!currentData || currentData.length === 0) {
+                                        return <div className="h-full flex items-center justify-center text-gray-400 text-sm">Veri yok.</div>;
+                                    }
+
+                                    return (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart key={selectedParent ?? 'root'}>
+                                                <Pie
+                                                    data={currentData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={50}
+                                                    outerRadius={70}
+                                                    paddingAngle={5}
+                                                    dataKey="value"
+                                                    nameKey="label"
+                                                    stroke="none"
+                                                    // Sadece ana ekrandayken (alt kategoriler varsa) tıklanabilir (cursor-pointer) yap
+                                                    className={!selectedParent ? "cursor-pointer outline-none" : "outline-none"}
+                                                    onClick={(data) => {
+                                                        // Ana ekrandayız ve tıklanan dilimin alt kategorisi varsa içine gir
+                                                        if (!selectedParent && data && data.payload && data.payload.subCategories && data.payload.subCategories.length > 0) {
+                                                            setSelectedParent(data.payload.label);
+                                                        }
+                                                    }}
+                                                    isAnimationActive={true}
+                                                    animationBegin={0}
+                                                    animationDuration={1000}
+                                                    animationEasing="ease-out"
+                                                >
+                                                    {currentData.map((entry, index) => (
+                                                        <Cell
+                                                            key={`cell-${index}`}
+                                                            fill={COLORS[index % COLORS.length]}
+                                                            className="transition-all duration-300 hover:opacity-80 outline-none"
+                                                        />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip formatter={(value, name) => [`${value.toLocaleString('tr-TR')} ₺`, name]} contentStyle={tooltipStyle} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    );
+                                })()}
+                            </div>
+
                             {/* Lejant (Alt Bilgi) */}
                             <div className="flex flex-wrap justify-center gap-2 lg:gap-3 mt-2">
-                                {dashboard.categoryDistribution?.slice(0, 5).map((entry, index) => (
-                                    <div key={index} className="flex items-center gap-1.5 text-[10px] lg:text-xs text-gray-600 dark:text-gray-300">
-                                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>{entry.label}
-                                    </div>
-                                ))}
+                                {(() => {
+                                    const currentData = selectedParent
+                                        ? dashboard.categoryDistribution.find(c => c.label === selectedParent)?.subCategories || []
+                                        : dashboard.categoryDistribution;
+
+                                    // Ekrana çok fazla sığmayacağı için ilk 6 tanesini gösteriyoruz
+                                    return currentData.slice(0, 6).map((entry, index) => (
+                                        <div key={index} className="flex items-center gap-1.5 text-[10px] lg:text-xs text-gray-600 dark:text-gray-300 font-medium">
+                                            <span className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
+                                            {entry.label}
+                                        </div>
+                                    ));
+                                })()}
                             </div>
                         </div>
 

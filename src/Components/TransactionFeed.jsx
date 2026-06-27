@@ -1,6 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import { formatDateTime } from '../utils/dateHelpers';
 
+// Kullanıcılara özel renk paleti atayan küçük bir yardımcı fonksiyon
+// İsmin baş harfine veya tam adına göre renk seçer, böylece hep aynı kişiye aynı renk denk gelir.
+const getUserBadgeColor = (username) => {
+    if (!username) return "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600";
+    
+    const name = username.toLowerCase();
+    
+    if (name.includes('ceren')) {
+        return "bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-800";
+    }
+    if (name.includes('ugur') || name.includes('uğur')) {
+        return "bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800";
+    }
+    
+    // Fallback (Diğer kullanıcılar için)
+    return "bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800";
+};
+
 export default function TransactionFeed({
     transactions,
     categories,
@@ -49,6 +67,9 @@ export default function TransactionFeed({
                     // Bu satırın menüsü açık mı?
                     const isMenuOpen = activeMenuId === t.id;
 
+                    const userInitial = t.addedBy ? t.addedBy.substring(0, 1).toUpperCase() : "?";
+                    const badgeClasses = getUserBadgeColor(t.addedBy);
+
                     return (
                         <div key={t.id} className="p-3 rounded-2xl flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-700/50 border border-transparent dark:border-gray-700 hover:border-gray-100 dark:hover:border-slate-600 transition duration-200 group relative">
                             
@@ -56,14 +77,24 @@ export default function TransactionFeed({
                                 <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center text-xl shadow-sm">
                                     {t.categoryIcon}
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-0.5 uppercase tracking-wider">
-                                        {formatDateTime(t.date)}
-                                    </span>
-                                    <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm capitalize">
+                                <div className="flex flex-col min-w-0">
+                                    {/* ÜST SATIR: Tarih ve Kullanıcı Badge'i Yan Yana */}
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider truncate">
+                                            {formatDateTime(t.date)}
+                                        </span>
+                                        <span 
+                                            className={`flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold shadow-sm ${badgeClasses}`} 
+                                            title={t.addedBy.toUpperCase() || 'Bilinmiyor'} // Üzerine gelince tam adı yazar
+                                        >
+                                            {userInitial}
+                                        </span>
+                                    </div>
+
+                                    <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm capitalize truncate">
                                         {(t.description || t.categoryName || "").toLocaleLowerCase('tr-TR')}
                                     </p>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-0.5">
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-0.5 truncate">
                                         {subtitleCategory}
                                         {t.merchantName ? ` • ${t.merchantName}` : ''}
                                         {t.countryName && t.countryName !== 'TÜRKİYE' && t.countryName !== 'Türkiye' ? ` • ${t.countryName}` : ''}
