@@ -168,8 +168,8 @@ export default function DashboardView({
                                                     data={currentData}
                                                     cx="50%"
                                                     cy="50%"
-                                                    innerRadius={50}
-                                                    outerRadius={70}
+                                                    innerRadius={70}
+                                                    outerRadius={90}
                                                     paddingAngle={5}
                                                     dataKey="value"
                                                     nameKey="label"
