@@ -210,10 +210,10 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start lg:items-stretch">
 
         {/* TAB 1: ANA SAYFA */}
-        <div className={`${activeTab === 'home' ? 'flex' : 'hidden'} lg:flex flex-col gap-4 lg:gap-6 lg:col-span-4 h-[calc(100dvh-170px)] lg:h-auto`}>
+        <div className={`${activeTab === 'home' ? 'flex' : 'hidden'} lg:flex flex-col gap-2.5 lg:gap-6 lg:col-span-4 h-[calc(100dvh-215px)] lg:h-auto`}>
           <SmartInput inputText={inputText} setInputText={setInputText} onQuickAdd={handleSmartInputSubmit} loading={quickLoading} onChipClick={handleChipClick} />
-          <div className="flex-1 min-h-0 lg:relative">
-            <div className="h-full w-full lg:absolute lg:inset-0">
+          <div className="flex-1 min-h-0 relative">
+            <div className="absolute inset-0">
               <TransactionFeed transactions={transactions} categories={masterData.categories} hasMore={hasMore} onLoadMore={() => fetchTransactions(page + 1)} onEdit={handleOpenEditModal} onDelete={handleDeleteTransaction} />
             </div>
           </div>
