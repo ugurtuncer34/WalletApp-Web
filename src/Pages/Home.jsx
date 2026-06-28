@@ -13,6 +13,7 @@ import TransactionForm from '../Components/TransactionForm';
 import AdvancedFilter from '../Components/AdvancedFilter';
 import { QuickAddModal, EditModal } from '../Components/TransactionModals';
 import LogoutConfirmModal from '../Components/LogoutConfirmModal';
+import RecurringWidget from '../Components/RecurringWidget';
 
 export default function Home() {
   const [inputText, setInputText] = useState("");
@@ -190,6 +191,11 @@ export default function Home() {
         </div>
       </div>
 
+      {/* GELECEK RADAR ÇİZGİSİ (Abonelikler ve Taksitler) */}
+      <div className={`${activeTab === 'grafik' ? 'block' : 'hidden'} lg:block w-full`}>
+        <RecurringWidget masterData={masterData} />
+      </div>
+
       {/* SADECE MOBİL İÇİN OLAN ALT KISIMLAR */}
       <div className="grid grid-cols-1 gap-8 mt-0 lg:mt-4">
         {/* TAB 3: ARA (SADECE MOBİL) */}
@@ -299,26 +305,76 @@ export default function Home() {
       />
 
       {/* MOBİL ALT MENÜ (TAB BAR) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-gray-200 dark:border-slate-800 flex justify-around items-center h-16 z-40 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.1)]">
-        <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'home' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'}`}>
-          <span className="text-2xl mb-1">{activeTab === 'home' ? '🏠' : '🛖'}</span>
-          <span className="text-[10px] font-bold">Ana Sayfa</span>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-gray-200 dark:border-slate-800 flex justify-around items-center z-40 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] px-2">
+        
+        <button onClick={() => setActiveTab('home')} className="relative flex flex-col items-center justify-center p-2 w-16 h-full transition-colors group">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className={`w-6 h-6 transition-all duration-300 ${activeTab === 'home' ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`} 
+            fill={activeTab === 'home' ? 'currentColor' : 'none'} 
+            viewBox="0 0 24 24" 
+            stroke="currentColor" 
+            strokeWidth={activeTab === 'home' ? '0' : '2'}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          {/* Aktif Nokta İndikatörü */}
+          <span className={`absolute bottom-2 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'home' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
         </button>
-        <button onClick={() => setActiveTab('grafik')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'grafik' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'}`}>
-          <span className="text-2xl mb-1">📊</span>
-          <span className="text-[10px] font-bold">Grafik</span>
+
+        <button onClick={() => setActiveTab('grafik')} className="relative flex flex-col items-center justify-center p-2 w-16 h-full transition-colors group">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className={`w-6 h-6 transition-all duration-300 ${activeTab === 'grafik' ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`} 
+            fill={activeTab === 'grafik' ? 'currentColor' : 'none'} 
+            viewBox="0 0 24 24" 
+            stroke="currentColor" 
+            strokeWidth={activeTab === 'grafik' ? '0' : '2'}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+          </svg>
+          <span className={`absolute bottom-2 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'grafik' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
         </button>
-        <div className="relative -top-6">
-          <button onClick={() => setIsBottomSheetOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg shadow-blue-600/40 text-3xl font-light transition-transform active:scale-95">+</button>
+
+        <div className="relative -top-5">
+          <button 
+            onClick={() => setIsBottomSheetOpen(true)} 
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-[3.25rem] h-[3.25rem] flex items-center justify-center shadow-[0_8px_20px_-6px_rgba(37,99,235,0.6)] dark:shadow-[0_8px_20px_-6px_rgba(59,130,246,0.5)] transition-transform active:scale-90"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
         </div>
-        <button onClick={() => setActiveTab('ara')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'ara' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'}`}>
-          <span className="text-2xl mb-1">🔍</span>
-          <span className="text-[10px] font-bold">Ara</span>
+
+        <button onClick={() => setActiveTab('ara')} className="relative flex flex-col items-center justify-center p-2 w-16 h-full transition-colors group">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className={`w-6 h-6 transition-all duration-300 ${activeTab === 'ara' ? 'text-blue-600 dark:text-blue-400 scale-110 stroke-[2.5]' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 stroke-2'}`} 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <span className={`absolute bottom-2 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'ara' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
         </button>
-        <button onClick={() => setActiveTab('profil')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'profil' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'}`}>
-          <span className="text-2xl mb-1">👤</span>
-          <span className="text-[10px] font-bold">Profil</span>
+
+        <button onClick={() => setActiveTab('profil')} className="relative flex flex-col items-center justify-center p-2 w-16 h-full transition-colors group">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className={`w-6 h-6 transition-all duration-300 ${activeTab === 'profil' ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`} 
+            fill={activeTab === 'profil' ? 'currentColor' : 'none'} 
+            viewBox="0 0 24 24" 
+            stroke="currentColor" 
+            strokeWidth={activeTab === 'profil' ? '0' : '2'}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <span className={`absolute bottom-2 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'profil' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
         </button>
+
       </div>
     </div>
   );

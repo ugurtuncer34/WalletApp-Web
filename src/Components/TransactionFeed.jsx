@@ -73,7 +73,7 @@ export default function TransactionFeed({
                     return (
                         <div key={t.id} className="p-3 rounded-2xl flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-700/50 border border-transparent dark:border-gray-700 hover:border-gray-100 dark:hover:border-slate-600 transition duration-200 group relative">
                             
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-1 min-w-0 pr-3">
                                 <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center text-xl shadow-sm">
                                     {t.categoryIcon}
                                 </div>
