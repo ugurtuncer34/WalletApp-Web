@@ -10,6 +10,18 @@ body {
   @apply bg-slate-950 text-gray-100;
 }
 
+html, body {
+  height: 100%;
+  margin: 0;
+  /* WKWebView standalone'da home indicator alanını render etmesi için 
+     sayfayı zorla scrollable yapıyoruz */
+  overscroll-behavior-y: none;
+}
+
+body {
+  min-height: 100.01%;
+}
+
 /* ==========================================
    ÖZEL KAYDIRMA ÇUBUĞU (SCROLLBAR) TASARIMI
    ========================================== */
