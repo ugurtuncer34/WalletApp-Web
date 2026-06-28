@@ -200,10 +200,10 @@ export default function Home() {
     // Ana sayfada (pb-0) sayfanın sekmesini engelliyoruz, liste özgürce akacak.
     <div className={`max-w-7xl mx-auto px-4 md:px-6 pt-2 lg:pt-4 ${activeTab === 'home' ? 'pb-0' : 'pb-28'} lg:pb-8 font-sans flex flex-col gap-4 lg:gap-6 relative`}>
 
-      <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast({ message: '', type: '' })} 
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ message: '', type: '' })}
       />
 
       <QuickAddModal isOpen={isQuickModalOpen} onClose={() => setIsQuickModalOpen(false)} chipName={selectedChip} onSubmit={handleQuickModalSubmit} loading={quickLoading} />
@@ -215,7 +215,7 @@ export default function Home() {
         {/* DİKKAT 2: gap-2.5 ile mobildeki 3 kart arası boşluk daraltıldı. h-[calc(100dvh-85px)] ile liste tam ekranın altına kadar uzatıldı. */}
         <div className={`${activeTab === 'home' ? 'flex' : 'hidden'} lg:flex flex-col gap-2.5 lg:gap-6 lg:col-span-4 h-[calc(100dvh-85px)] lg:h-auto`}>
           <SmartInput inputText={inputText} setInputText={setInputText} onQuickAdd={handleSmartInputSubmit} loading={quickLoading} onChipClick={handleChipClick} />
-          
+
           <div className="flex-1 min-h-0 relative">
             {/* DİKKAT 3: pb-28 eklendi. Liste ekranın en altına kadar inecek, tab bar üzerinde yüzecek. pb-28 sayesinde son eleman tab barın altından kurtulacak! */}
             <div className="absolute inset-0 pb-28 lg:pb-0">
@@ -334,18 +334,24 @@ export default function Home() {
         </div>
       </div>
 
-      <LogoutConfirmModal 
-        isOpen={isLogoutModalOpen} 
-        onClose={() => setIsLogoutModalOpen(false)} 
-        onConfirm={handleLogoutConfirm} 
+      <LogoutConfirmModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={handleLogoutConfirm}
       />
 
       {/* MOBİL ALT MENÜ (TAB BAR) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-gray-200 dark:border-slate-800 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] pb-[env(safe-area-inset-bottom)]">
-        
+      <div
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-gray-200 dark:border-slate-800 shadow-[0_-5px_20px_rgba(0,0,0,0.1)]"
+        style={{
+          height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
+
         {/* DİKKAT 1: h-16 (64px) yerine h-14 (56px) kullanıldı. Native App yüksekliği! */}
         <div className="flex justify-around items-center h-14 px-2">
-          
+
           <button onClick={() => setActiveTab('home')} className="relative flex flex-col items-center justify-center p-2 w-16 h-full transition-colors group">
             <svg xmlns="http://www.w3.org/2000/svg" className={`w-6 h-6 transition-all duration-300 ${activeTab === 'home' ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`} fill={activeTab === 'home' ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeTab === 'home' ? '0' : '2'}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
