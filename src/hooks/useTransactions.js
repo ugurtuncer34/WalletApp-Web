@@ -142,7 +142,7 @@ export const useTransactions = (onSuccess) => {
 
     const deleteTransaction = async (id) => {
         const isConfirmed = window.confirm("Bu harcamayı silmek istediğinize emin misiniz?");
-        if (!isConfirmed) return { success: false };
+        if (!isConfirmed) return { cancelled: true };
 
         try {
             const res = await fetch(`${API_BASE}/transactions/${id}`, {

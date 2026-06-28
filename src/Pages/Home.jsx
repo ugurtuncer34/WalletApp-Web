@@ -14,6 +14,7 @@ import AdvancedFilter from '../Components/AdvancedFilter';
 import { QuickAddModal, EditModal } from '../Components/TransactionModals';
 import LogoutConfirmModal from '../Components/LogoutConfirmModal';
 import RecurringWidget from '../Components/RecurringWidget';
+import Toast from '../Components/Toast';
 
 export default function Home() {
   const [inputText, setInputText] = useState("");
@@ -25,6 +26,8 @@ export default function Home() {
 
   const [activeTab, setActiveTab] = useState('home');
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+
+  const [toast, setToast] = useState({ message: '', type: '' });
 
   // --- MASAÜSTÜ DRAWER (KAYAN PANEL) STATE'LERİ ---
   const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false);
@@ -77,7 +80,12 @@ export default function Home() {
 
   const handleSmartInputSubmit = async (text) => {
     const res = await addQuickTransaction(text);
-    if (res.success) setInputText("");
+    if (res.success) {
+      setInputText("");
+      setToast({ message: 'Harcama başarıyla eklendi!', type: 'success' });
+    } else {
+      setToast({ message: 'Eklenirken bir hata oluştu.', type: 'error' });
+    }
   };
 
   const handleChipClick = (chipWord) => {
@@ -91,6 +99,9 @@ export default function Home() {
     if (res.success) {
       setIsQuickModalOpen(false);
       setInputText("");
+      setToast({ message: `${selectedChip.toUpperCase()} harcaması eklendi!`, type: 'success' });
+    } else {
+      setToast({ message: 'Eklenirken bir hata oluştu.', type: 'error' });
     }
   };
 
@@ -116,17 +127,43 @@ export default function Home() {
 
   const handleEditSubmit = async (id, payload) => {
     const res = await updateTransaction(id, payload);
-    if (res.success) setIsEditModalOpen(false);
+    if (res.success) {
+      setIsEditModalOpen(false);
+      setToast({ message: 'Harcama güncellendi!', type: 'success' });
+    } else {
+      setToast({ message: 'Güncellenirken bir hata oluştu.', type: 'error' });
+    }
+  };
+
+  const handleDeleteTransaction = async (id) => {
+    const res = await deleteTransaction(id);
+    // Hook'unun (useTransactions) nasıl döndüğüne bağlı olarak if kontrolü:
+    if (!res || res.cancelled) return;
+    if (res && res.success) {
+      setToast({ message: 'Kayıt silindi!', type: 'success' });
+    } else {
+      setToast({ message: 'Silinirken bir hata oluştu.', type: 'error' });
+    }
   };
 
   const handleBottomSheetFormSubmit = async (payload) => {
     const res = await addManualTransaction(payload);
-    if (res.success) setIsBottomSheetOpen(false);
+    if (res.success) {
+      setIsBottomSheetOpen(false);
+      setToast({ message: 'Harcama başarıyla eklendi!', type: 'success' });
+    } else {
+      setToast({ message: 'Eklenirken bir hata oluştu.', type: 'error' });
+    }
   };
 
   const handleDesktopManualSubmit = async (payload) => {
     const res = await addManualTransaction(payload);
-    if (res.success) setIsDesktopFormOpen(false);
+    if (res.success) {
+      setIsDesktopFormOpen(false);
+      setToast({ message: 'Harcama başarıyla eklendi!', type: 'success' });
+    } else {
+      setToast({ message: 'Eklenirken bir hata oluştu.', type: 'error' });
+    }
     return res;
   };
 
@@ -161,6 +198,12 @@ export default function Home() {
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 pt-2 lg:pt-4 pb-28 lg:pb-8 font-sans flex flex-col gap-4 lg:gap-6 relative">
 
+      <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast({ message: '', type: '' })} 
+      />
+
       <QuickAddModal isOpen={isQuickModalOpen} onClose={() => setIsQuickModalOpen(false)} chipName={selectedChip} onSubmit={handleQuickModalSubmit} loading={quickLoading} />
       <EditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} initialData={editInitialData} masterData={masterData} onSubmit={handleEditSubmit} loading={editLoading} />
 
@@ -171,10 +214,9 @@ export default function Home() {
           <SmartInput inputText={inputText} setInputText={setInputText} onQuickAdd={handleSmartInputSubmit} loading={quickLoading} onChipClick={handleChipClick} />
           <div className="flex-1 min-h-0 lg:relative">
             <div className="h-full w-full lg:absolute lg:inset-0">
-              <TransactionFeed transactions={transactions} categories={masterData.categories} hasMore={hasMore} onLoadMore={() => fetchTransactions(page + 1)} onEdit={handleOpenEditModal} onDelete={deleteTransaction} />
+              <TransactionFeed transactions={transactions} categories={masterData.categories} hasMore={hasMore} onLoadMore={() => fetchTransactions(page + 1)} onEdit={handleOpenEditModal} onDelete={handleDeleteTransaction} />
             </div>
           </div>
-
         </div>
 
         {/* TAB 2: GRAFİK */}
@@ -200,7 +242,7 @@ export default function Home() {
       <div className="grid grid-cols-1 gap-8 mt-0 lg:mt-4">
         {/* TAB 3: ARA (SADECE MOBİL) */}
         <div className={`${activeTab === 'ara' ? 'block' : 'hidden'} lg:hidden`}>
-          <AdvancedFilter filters={filters} masterData={masterData} categories={masterData.categories} onEdit={handleOpenEditModal} onDelete={deleteTransaction} />
+          <AdvancedFilter filters={filters} masterData={masterData} categories={masterData.categories} onEdit={handleOpenEditModal} onDelete={handleDeleteTransaction} />
         </div>
 
         {/* TAB 4: MOBİL PROFİL */}
@@ -258,7 +300,7 @@ export default function Home() {
 
         {/* KAYDIRILABİLİR İÇERİK (Butonun altında kalması için pt-16 eklendi) */}
         <div className="h-full w-full overflow-y-auto scrollbar-hide p-5 pt-16">
-          <AdvancedFilter filters={filters} masterData={masterData} categories={masterData.categories} onEdit={handleOpenEditModal} onDelete={deleteTransaction} />
+          <AdvancedFilter filters={filters} masterData={masterData} categories={masterData.categories} onEdit={handleOpenEditModal} onDelete={handleDeleteTransaction} />
         </div>
       </div>
 
