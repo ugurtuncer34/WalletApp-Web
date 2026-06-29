@@ -341,56 +341,59 @@ export default function Home() {
       />
 
       {/* MOBİL ALT MENÜ (TAB BAR) */}
+      {/* Çift katmanlı div yapısı kaldırıldı. Yükseklik icon-only tasarıma uygun olarak 50px + safe-area olarak revize edildi. */}
       <div
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-gray-200 dark:border-slate-800 shadow-[0_-5px_20px_rgba(0,0,0,0.1)]"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-gray-200 dark:border-slate-800 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] flex justify-around items-center px-2"
         style={{
-          height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          height: 'calc(50px + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) * 0.5)',
+          /* paddingBottom katsayısı 0.5 yapılarak ikonların PWA modunda aşağıya daha dengeli oturması sağlandı */
         }}
       >
 
-        {/* DİKKAT 1: h-16 (64px) yerine h-14 (56px) kullanıldı. Native App yüksekliği! */}
-        <div className="flex justify-around items-center h-14 px-2">
+        {/* 1. ANA SAYFA */}
+        <button onClick={() => setActiveTab('home')} className="relative flex flex-col items-center justify-center p-2 w-16 h-12 transition-colors group">
+          <svg xmlns="http://www.w3.org/2000/svg" className={`w-6 h-6 transition-all duration-300 ${activeTab === 'home' ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`} fill={activeTab === 'home' ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeTab === 'home' ? '0' : '2'}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          {/* Aktiflik noktası buton sınırları içinde bottom-0 konumuna çekildi */}
+          <span className={`absolute bottom-0 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'home' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
+        </button>
 
-          <button onClick={() => setActiveTab('home')} className="relative flex flex-col items-center justify-center p-2 w-16 h-full transition-colors group">
-            <svg xmlns="http://www.w3.org/2000/svg" className={`w-6 h-6 transition-all duration-300 ${activeTab === 'home' ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`} fill={activeTab === 'home' ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeTab === 'home' ? '0' : '2'}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        {/* 2. GRAFİK */}
+        <button onClick={() => setActiveTab('grafik')} className="relative flex flex-col items-center justify-center p-2 w-16 h-12 transition-colors group">
+          <svg xmlns="http://www.w3.org/2000/svg" className={`w-6 h-6 transition-all duration-300 ${activeTab === 'grafik' ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`} fill={activeTab === 'grafik' ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeTab === 'grafik' ? '0' : '2'}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+          </svg>
+          <span className={`absolute bottom-0 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'grafik' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
+        </button>
+
+        {/* 3. ORTA BUTON (+) */}
+        {/* Bar yüksekliği optimize edildiği için taşma payı -top-3 olarak dengelendi */}
+        <div className="relative -top-3">
+          <button onClick={() => setIsBottomSheetOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-[3.25rem] h-[3.25rem] flex items-center justify-center shadow-[0_8px_20px_-6px_rgba(37,99,235,0.6)] dark:shadow-[0_8px_20px_-6px_rgba(59,130,246,0.5)] transition-transform active:scale-90">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            {/* DİKKAT 2: Noktalar bottom-2'den bottom-1.5'a çekildi */}
-            <span className={`absolute bottom-1.5 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'home' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
-          </button>
-
-          <button onClick={() => setActiveTab('grafik')} className="relative flex flex-col items-center justify-center p-2 w-16 h-full transition-colors group">
-            <svg xmlns="http://www.w3.org/2000/svg" className={`w-6 h-6 transition-all duration-300 ${activeTab === 'grafik' ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`} fill={activeTab === 'grafik' ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeTab === 'grafik' ? '0' : '2'}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-            </svg>
-            <span className={`absolute bottom-1.5 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'grafik' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
-          </button>
-
-          {/* DİKKAT 3: Ortadaki buton -top-5'ten -top-4'e çekildi (Kutu kısaldığı için) */}
-          <div className="relative -top-4">
-            <button onClick={() => setIsBottomSheetOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-[3.25rem] h-[3.25rem] flex items-center justify-center shadow-[0_8px_20px_-6px_rgba(37,99,235,0.6)] dark:shadow-[0_8px_20px_-6px_rgba(59,130,246,0.5)] transition-transform active:scale-90">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
-          </div>
-
-          <button onClick={() => setActiveTab('ara')} className="relative flex flex-col items-center justify-center p-2 w-16 h-full transition-colors group">
-            <svg xmlns="http://www.w3.org/2000/svg" className={`w-6 h-6 transition-all duration-300 ${activeTab === 'ara' ? 'text-blue-600 dark:text-blue-400 scale-110 stroke-[2.5]' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 stroke-2'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <span className={`absolute bottom-1.5 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'ara' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
-          </button>
-
-          <button onClick={() => setActiveTab('profil')} className="relative flex flex-col items-center justify-center p-2 w-16 h-full transition-colors group">
-            <svg xmlns="http://www.w3.org/2000/svg" className={`w-6 h-6 transition-all duration-300 ${activeTab === 'profil' ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`} fill={activeTab === 'profil' ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeTab === 'profil' ? '0' : '2'}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span className={`absolute bottom-1.5 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'profil' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
           </button>
         </div>
+
+        {/* 4. ARA */}
+        <button onClick={() => setActiveTab('ara')} className="relative flex flex-col items-center justify-center p-2 w-16 h-12 transition-colors group">
+          <svg xmlns="http://www.w3.org/2000/svg" className={`w-6 h-6 transition-all duration-300 ${activeTab === 'ara' ? 'text-blue-600 dark:text-blue-400 scale-110 stroke-[2.5]' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 stroke-2'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <span className={`absolute bottom-0 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'ara' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
+        </button>
+
+        {/* 5. PROFİL */}
+        <button onClick={() => setActiveTab('profil')} className="relative flex flex-col items-center justify-center p-2 w-16 h-12 transition-colors group">
+          <svg xmlns="http://www.w3.org/2000/svg" className={`w-6 h-6 transition-all duration-300 ${activeTab === 'profil' ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`} fill={activeTab === 'profil' ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeTab === 'profil' ? '0' : '2'}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <span className={`absolute bottom-0 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'profil' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
+        </button>
       </div>
     </div>
   );
