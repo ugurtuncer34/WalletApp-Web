@@ -10,12 +10,13 @@ const FREQUENCY_MAP = {
 };
 
 export default function RecurringWidget({ masterData }) {
-    const { groupedCategories, merchants } = masterData; // masterData'dan parçaladık
+    const { groupedCategories, merchants } = masterData;
     const [subscriptions, setSubscriptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Form Stateleri
+    const [editingId, setEditingId] = useState(null);
+
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -50,6 +51,33 @@ export default function RecurringWidget({ masterData }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
+    const resetFormAndCloseModal = () => {
+        setFormData({
+            name: '', description: '', amount: '', categoryId: '', merchantId: '',
+            frequency: 3, startDate: new Date().toISOString().split('T')[0],
+            isInstallment: false, totalInstallments: ''
+        });
+        setEditingId(null);
+        setIsModalOpen(false);
+    };
+
+    const handleEditClick = (sub) => {
+        setFormData({
+            name: sub.name,
+            description: sub.description || '',
+            amount: sub.amount,
+            categoryId: sub.categoryId || '',
+            merchantId: sub.merchantId || '',
+            frequency: sub.frequency,
+            // Backend'den gelen nextExecutionDate'i input type="date" formatına (YYYY-MM-DD) çeviriyoruz
+            startDate: new Date(sub.nextExecutionDate).toISOString().split('T')[0],
+            isInstallment: sub.isInstallment,
+            totalInstallments: sub.totalInstallments || ''
+        });
+        setEditingId(sub.id);
+        setIsModalOpen(true);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -66,11 +94,18 @@ export default function RecurringWidget({ masterData }) {
                 description: formData.description || null,
                 frequency: parseInt(formData.frequency),
                 merchantId: formData.merchantId || null,
-                totalInstallments: formData.isInstallment ? parseInt(formData.totalInstallments) : null
+                totalInstallments: formData.isInstallment ? parseInt(formData.totalInstallments) : null,
+                nextExecutionDate: formData.startDate
             };
 
-            const res = await fetch(`${API_BASE}/RecurringTransactions`, {
-                method: 'POST',
+            const url = editingId
+                ? `${API_BASE}/RecurringTransactions/${editingId}`
+                : `${API_BASE}/RecurringTransactions`;
+
+            const method = editingId ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -79,15 +114,10 @@ export default function RecurringWidget({ masterData }) {
             });
 
             if (res.ok) {
-                setIsModalOpen(false);
+                resetFormAndCloseModal();
                 fetchSubscriptions();
-                setFormData({
-                    name: '', description: '', amount: '', categoryId: '', merchantId: '',
-                    frequency: 3, startDate: new Date().toISOString().split('T')[0],
-                    isInstallment: false, totalInstallments: ''
-                });
             } else {
-                alert("Eklenirken bir hata oluştu.");
+                alert(editingId ? "Güncellenirken bir hata oluştu." : "Eklenirken bir hata oluştu.");
             }
         } catch (error) {
             console.error(error);
@@ -130,13 +160,23 @@ export default function RecurringWidget({ masterData }) {
             <div className="flex overflow-x-auto gap-4 pb-2 pt-3 px-1 scrollbar-hide snap-x">
                 {subscriptions.map(sub => (
                     <div key={sub.id} className="snap-start flex-shrink-0 w-[220px] bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm relative group transition-transform hover:-translate-y-1.5">
-                        <button
-                            onClick={() => handleCancel(sub.id, sub.name)}
-                            className="absolute top-2 right-2 w-6 h-6 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                            title="İptal Et"
-                        >
-                            ✕
-                        </button>
+
+                        <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                                onClick={() => handleEditClick(sub)}
+                                className="w-6 h-6 bg-blue-50 dark:bg-blue-900/30 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-full flex items-center justify-center transition-colors text-[10px]"
+                                title="Düzenle"
+                            >
+                                ✏️
+                            </button>
+                            <button
+                                onClick={() => handleCancel(sub.id, sub.name)}
+                                className="w-6 h-6 bg-red-50 dark:bg-red-900/30 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full flex items-center justify-center transition-colors text-xs"
+                                title="İptal Et"
+                            >
+                                ✕
+                            </button>
+                        </div>
 
                         <div className="flex justify-between items-start mb-2">
                             <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
@@ -172,7 +212,7 @@ export default function RecurringWidget({ masterData }) {
                 ))}
 
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => { setIsModalOpen(true); setEditingId(null); }}
                     className="snap-start flex-shrink-0 w-[220px] min-h-[140px] flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl p-4 text-gray-400 hover:text-blue-500 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-slate-900/50 transition-all group"
                 >
                     <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 flex items-center justify-center text-xl transition-colors">
@@ -182,14 +222,16 @@ export default function RecurringWidget({ masterData }) {
                 </button>
             </div>
 
-            {/* YENİ EKLEME MODALI */}
+            {/* EKLEME / GÜNCELLEME MODALI */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
-                    {/* Modal overflow görünür kalmalı ki dropdown dışarı taşabilsin */}
                     <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md max-h-[90vh] overflow-visible shadow-2xl p-6 border border-gray-100 dark:border-slate-800">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Düzenli Ödeme Ekle</h3>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                            {/* GÜNCELLENDİ: Başlık dinamikleşti */}
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                {editingId ? 'Abonelik / Taksit Düzenle' : 'Düzenli Ödeme Ekle'}
+                            </h3>
+                            <button onClick={resetFormAndCloseModal} className="text-gray-400 hover:text-gray-600">✕</button>
                         </div>
 
                         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -215,7 +257,6 @@ export default function RecurringWidget({ masterData }) {
                                 <div className="relative z-30">
                                     <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase mb-1">İşyeri (Opsiyonel)</label>
                                     <SearchableSelect
-                                        /* SADECE SEÇİLEN KATEGORİYE AİT İŞYERLERİNİ FİLTRELE */
                                         options={formData.categoryId && merchants ? merchants.filter(m => m.defaultCategory?.id === formData.categoryId) : (merchants || [])}
                                         value={formData.merchantId}
                                         onChange={(val) => setFormData({ ...formData, merchantId: val })}
@@ -259,7 +300,7 @@ export default function RecurringWidget({ masterData }) {
                             )}
 
                             <button type="submit" disabled={loading} className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-md disabled:opacity-50">
-                                {loading ? 'Kaydediliyor...' : 'Abonelik / Taksit Ekle'}
+                                {loading ? 'Kaydediliyor...' : (editingId ? 'Güncelle' : 'Abonelik / Taksit Ekle')}
                             </button>
                         </form>
                     </div>
