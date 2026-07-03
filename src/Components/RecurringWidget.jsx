@@ -10,11 +10,11 @@ const FREQUENCY_MAP = {
 };
 
 export default function RecurringWidget({ masterData }) {
-    const { groupedCategories, merchants } = masterData;
+    const { groupedCategories, merchants, categories } = masterData; 
     const [subscriptions, setSubscriptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-
+    
     const [editingId, setEditingId] = useState(null);
 
     const [formData, setFormData] = useState({
@@ -62,14 +62,17 @@ export default function RecurringWidget({ masterData }) {
     };
 
     const handleEditClick = (sub) => {
+        // İsimlerden yola çıkarak masterData içerisindeki ID'leri buluyoruz
+        const cat = categories?.find(c => c.name === sub.categoryName);
+        const mer = merchants?.find(m => m.name === sub.merchantName);
+
         setFormData({
             name: sub.name,
             description: sub.description || '',
             amount: sub.amount,
-            categoryId: sub.categoryId || '',
-            merchantId: sub.merchantId || '',
+            categoryId: cat ? cat.id : (sub.categoryId || ''),
+            merchantId: mer ? mer.id : (sub.merchantId || ''),
             frequency: sub.frequency,
-            // Backend'den gelen nextExecutionDate'i input type="date" formatına (YYYY-MM-DD) çeviriyoruz
             startDate: new Date(sub.nextExecutionDate).toISOString().split('T')[0],
             isInstallment: sub.isInstallment,
             totalInstallments: sub.totalInstallments || ''
@@ -95,13 +98,13 @@ export default function RecurringWidget({ masterData }) {
                 frequency: parseInt(formData.frequency),
                 merchantId: formData.merchantId || null,
                 totalInstallments: formData.isInstallment ? parseInt(formData.totalInstallments) : null,
-                nextExecutionDate: formData.startDate
+                nextExecutionDate: formData.startDate 
             };
 
-            const url = editingId
-                ? `${API_BASE}/RecurringTransactions/${editingId}`
+            const url = editingId 
+                ? `${API_BASE}/RecurringTransactions/${editingId}` 
                 : `${API_BASE}/RecurringTransactions`;
-
+                
             const method = editingId ? 'PUT' : 'POST';
 
             const res = await fetch(url, {
@@ -156,28 +159,10 @@ export default function RecurringWidget({ masterData }) {
                 </h3>
             </div>
 
-            {/* YATAY KAYDIRILABİLİR LİSTE */}
             <div className="flex overflow-x-auto gap-4 pb-2 pt-3 px-1 scrollbar-hide snap-x">
                 {subscriptions.map(sub => (
-                    <div key={sub.id} className="snap-start flex-shrink-0 w-[220px] bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm relative group transition-transform hover:-translate-y-1.5">
-
-                        <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                                onClick={() => handleEditClick(sub)}
-                                className="w-6 h-6 bg-blue-50 dark:bg-blue-900/30 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-full flex items-center justify-center transition-colors text-[10px]"
-                                title="Düzenle"
-                            >
-                                ✏️
-                            </button>
-                            <button
-                                onClick={() => handleCancel(sub.id, sub.name)}
-                                className="w-6 h-6 bg-red-50 dark:bg-red-900/30 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full flex items-center justify-center transition-colors text-xs"
-                                title="İptal Et"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
+                    <div key={sub.id} className="snap-start flex-shrink-0 w-[220px] bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm relative group transition-transform hover:-translate-y-1.5 flex flex-col">
+                        
                         <div className="flex justify-between items-start mb-2">
                             <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                                 {formatNextDate(sub.nextExecutionDate)}
@@ -187,15 +172,15 @@ export default function RecurringWidget({ masterData }) {
                             </div>
                         </div>
 
-                        <h4 className="font-bold text-gray-800 dark:text-white text-sm truncate" title={sub.name}>{sub.name}</h4>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate mb-3">{sub.merchantName || sub.categoryName}</p>
+                        <h4 className="font-bold text-gray-800 dark:text-white text-sm truncate pr-2" title={sub.name}>{sub.name}</h4>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate mb-3 pr-2">{sub.merchantName || sub.categoryName}</p>
 
                         <div className="font-bold text-lg text-blue-600 dark:text-blue-400 mb-2">
                             {sub.amount} ₺
                         </div>
 
                         {sub.isInstallment && sub.totalInstallments > 0 && (
-                            <div className="mt-auto">
+                            <div className="mt-auto mb-6">
                                 <div className="flex justify-between text-[9px] font-bold text-gray-500 mb-1">
                                     <span>Taksit</span>
                                     <span>{sub.processedInstallments} / {sub.totalInstallments}</span>
@@ -208,6 +193,23 @@ export default function RecurringWidget({ masterData }) {
                                 </div>
                             </div>
                         )}
+
+                        <div className="absolute bottom-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleEditClick(sub); }}
+                                className="w-6 h-6 bg-blue-50 dark:bg-blue-900/30 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-full flex items-center justify-center transition-colors text-[10px]"
+                                title="Düzenle"
+                            >
+                                ✏️
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleCancel(sub.id, sub.name); }}
+                                className="w-6 h-6 bg-red-50 dark:bg-red-900/30 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full flex items-center justify-center transition-colors text-xs"
+                                title="İptal Et"
+                            >
+                                ✕
+                            </button>
+                        </div>
                     </div>
                 ))}
 
@@ -227,7 +229,6 @@ export default function RecurringWidget({ masterData }) {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md max-h-[90vh] overflow-visible shadow-2xl p-6 border border-gray-100 dark:border-slate-800">
                         <div className="flex justify-between items-center mb-6">
-                            {/* GÜNCELLENDİ: Başlık dinamikleşti */}
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                                 {editingId ? 'Abonelik / Taksit Düzenle' : 'Düzenli Ödeme Ekle'}
                             </h3>
