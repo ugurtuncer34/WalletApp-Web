@@ -5,7 +5,7 @@ import SearchableSelect from './Combobox';
 export default function TransactionForm({ masterData, onAdd, loading }) {
     const { groupedCategories, merchants, countries, currencies } = masterData;
     const [form, setForm] = useState({
-        amount: "", date: "", description: "", categoryId: "", merchantId: "", countryId: "", currencyId: "", exchangeRate: ""
+        amount: "", date: "", description: "", categoryId: "", merchantId: "", countryId: "", currencyId: ""
     });
 
     const handleSubmit = async (e) => {
@@ -23,12 +23,11 @@ export default function TransactionForm({ masterData, onAdd, loading }) {
             countryId: form.countryId || null,
             currencyId: form.currencyId || null,
             date: form.date ? new Date(form.date).toISOString() : null,
-            exchangeRate: form.exchangeRate ? parseFloat(form.exchangeRate) : null
         };
 
         const result = await onAdd(payload);
         if (result && result.success) {
-            setForm({ amount: "", date: "", description: "", categoryId: "", merchantId: "", countryId: "", currencyId: "", exchangeRate: "" });
+            setForm({ amount: "", date: "", description: "", categoryId: "", merchantId: "", countryId: "", currencyId: "" });
         }
     };
 
@@ -77,14 +76,10 @@ export default function TransactionForm({ masterData, onAdd, loading }) {
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-1 col-span-2">
-                    <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">Kur</label>
-                    <div className="flex gap-2 mt-1">
-                        <input type="number" step="0.01" value={form.exchangeRate} onChange={e => setForm({ ...form, exchangeRate: e.target.value })} placeholder="Kur" className="w-2/3 p-2.5 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition" />
-                        <button type="submit" disabled={loading} className="w-1/3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-2.5 rounded-xl transition shadow-sm disabled:opacity-50">
-                            {loading ? '...' : 'Ekle'}
-                        </button>
-                    </div>
+                <div className="flex flex-col gap-1 col-span-2 mt-2">
+                    <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3.5 rounded-xl transition shadow-sm disabled:opacity-50">
+                        {loading ? 'İşleniyor...' : 'Harcama Ekle'}
+                    </button>
                 </div>
             </form>
         </div>

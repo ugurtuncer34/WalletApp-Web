@@ -77,7 +77,6 @@ export function EditModal({ isOpen, onClose, initialData, masterData, onSubmit, 
             countryId: editForm.countryId ? editForm.countryId : emptyGuid,
             currencyId: editForm.currencyId ? editForm.currencyId : emptyGuid,
             date: editForm.date ? new Date(editForm.date).toISOString() : undefined,
-            exchangeRate: editForm.exchangeRate ? parseFloat(editForm.exchangeRate) : undefined
         };
         await onSubmit(editForm.id, payload);
     };
@@ -132,13 +131,10 @@ export function EditModal({ isOpen, onClose, initialData, masterData, onSubmit, 
                     </div>
                     <div className="flex flex-col gap-1">
                         <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Döviz</label>
-                        <div className="flex gap-2">
-                            <select value={editForm.currencyId || ""} onChange={e => setEditForm({ ...editForm, currencyId: e.target.value })} className="w-1/2 p-3 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-transparent dark:border-gray-700 focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:border-blue-500 transition">
-                                <option value="">TRY</option>
-                                {currencies.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
-                            </select>
-                            <input type="number" step="0.01" value={editForm.exchangeRate || ""} onChange={e => setEditForm({ ...editForm, exchangeRate: e.target.value })} placeholder="Kur" className="w-1/2 p-3 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-transparent dark:border-gray-700 focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:border-blue-500 transition" />
-                        </div>
+                        <select value={editForm.currencyId || ""} onChange={e => setEditForm({ ...editForm, currencyId: e.target.value })} className="w-full p-3 bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 rounded-xl border border-transparent dark:border-gray-700 focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:border-blue-500 transition">
+                            <option value="">TRY</option>
+                            {currencies.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
+                        </select>
                     </div>
                     <button type="submit" disabled={loading} className="md:col-span-2 w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition shadow-md disabled:opacity-50">
                         {loading ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
