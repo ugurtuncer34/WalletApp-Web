@@ -140,7 +140,7 @@ export default function TransactionFeed({
                                 {/* Fiyat ve Kur (DİKKAT: Mobildeki üst boşluk mt-6 yapılarak araya daha çok mesafe kondu) */}
                                 <div className="font-bold text-gray-900 dark:text-gray-100 text-right mt-6 lg:mt-3 text-sm lg:text-base">
                                     {t.amount} {t.currencySymbol ? t.currencySymbol : '₺'}
-                                    {t.exchangeRate && t.exchangeRate !== 1 && <div className="text-[9px] text-gray-400 font-normal mt-0.5">Kur: {t.exchangeRate}</div>}
+                                    {t.exchangeRate && t.exchangeRate !== 1 && <div className="text-[9px] text-gray-400 font-bold mt-0.5">TRY: {(t.exchangeRate * t.amount).toFixed(1)}</div>}
                                 </div>
                             </div>
                         </div>

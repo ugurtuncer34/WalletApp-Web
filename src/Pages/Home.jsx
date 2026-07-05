@@ -15,6 +15,7 @@ import { QuickAddModal, EditModal } from '../Components/TransactionModals';
 import LogoutConfirmModal from '../Components/LogoutConfirmModal';
 import RecurringWidget from '../Components/RecurringWidget';
 import Toast from '../Components/Toast';
+import CryptoWidget from '../Components/CryptoWidget';
 
 export default function Home() {
   const [inputText, setInputText] = useState("");
@@ -238,9 +239,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* GELECEK RADAR ÇİZGİSİ (Abonelikler ve Taksitler) */}
-      <div className={`${activeTab === 'grafik' ? 'block' : 'hidden'} lg:block w-full`}>
+      {/* GELECEK RADAR ÇİZGİSİ (Abonelikler, Taksitler ve Kripto) */}
+      <div className={`${activeTab === 'grafik' ? 'flex' : 'hidden'} lg:flex flex-col gap-4 lg:gap-6 w-full`}>
         <RecurringWidget masterData={masterData} />
+        <CryptoWidget />
       </div>
 
       {/* SADECE MOBİL İÇİN OLAN ALT KISIMLAR */}
