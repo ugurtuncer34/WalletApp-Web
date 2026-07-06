@@ -41,7 +41,8 @@ export default function Home() {
   const [pwError, setPwError] = useState(null);
 
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const [desktopRightTab, setDesktopRightTab] = useState('dashboard'); // 'dashboard' veya 'table'
+  const [desktopRightTab, setDesktopRightTab] = useState('dashboard');
+  const [users, setUsers] = useState([]);
 
   // --- BOTTOM SHEET SÜRÜKLEME (SWIPE) STATE'İ ---
   const [touchStartY, setTouchStartY] = useState(null);
@@ -79,6 +80,23 @@ export default function Home() {
   useEffect(() => {
     fetchTransactions(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/users`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('wallet_token')}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUsers(data);
+        }
+      } catch (err) {
+        console.error("Kullanıcılar çekilemedi:", err);
+      }
+    };
+    fetchUsers();
   }, []);
 
   const handleSmartInputSubmit = async (text) => {
@@ -287,6 +305,12 @@ export default function Home() {
                 setDashboardMonth={dashboardInfo.setDashboardMonth}
                 dashboardYear={dashboardInfo.dashboardYear}
                 setDashboardYear={dashboardInfo.setDashboardYear}
+                users={users}
+                selectedUserId={dashboardInfo.selectedUserId}
+                onUserSelect={dashboardInfo.setSelectedUserId}
+                currencies={masterData.currencies}
+                selectedCurrencyId={dashboardInfo.selectedCurrencyId}
+                onCurrencySelect={dashboardInfo.setSelectedCurrencyId}
                 onOpenSearch={() => setIsDesktopSearchOpen(true)}
                 onOpenForm={() => setIsDesktopFormOpen(true)}
               />
