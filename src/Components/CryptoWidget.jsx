@@ -47,7 +47,7 @@ export default function CryptoWidget() {
     };
 
     return (
-        <div className="w-full mt-4 bg-white dark:bg-gray-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 transition-colors">
+        <div className="w-full mt-2 bg-white dark:bg-gray-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 transition-colors">
             {/* BAŞLIK VE TOPLAM DEĞER */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 px-1 gap-2">
                 <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">

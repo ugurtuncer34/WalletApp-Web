@@ -149,7 +149,7 @@ export default function RecurringWidget({ masterData }) {
     };
 
     return (
-        <div className="w-full mt-4 mb-4 lg:mb-0 bg-white dark:bg-gray-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 transition-colors">
+        <div className="w-full mt-2 mb-4 lg:mb-0 bg-white dark:bg-gray-800 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 dark:border-gray-700 transition-colors">
             <div className="flex justify-between items-center mb-3 px-1">
                 <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                     ⏳ Yaklaşan Ödemeler

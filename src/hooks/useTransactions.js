@@ -18,6 +18,7 @@ export const useTransactions = (onSuccess) => {
     const [transactions, setTransactions] = useState([]);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
+    const [totalCount, setTotalCount] = useState(0);
 
     const [quickLoading, setQuickLoading] = useState(false);
     const [manualLoading, setManualLoading] = useState(false);
@@ -45,6 +46,7 @@ export const useTransactions = (onSuccess) => {
             if (pageNum === 1) setTransactions(data.items);
             else setTransactions(prev => [...prev, ...data.items]);
 
+            setTotalCount(data.totalCount);
             setHasMore(data.totalCount > pageNum * data.pageSize);
             setPage(pageNum);
         } catch (err) {
@@ -165,7 +167,7 @@ export const useTransactions = (onSuccess) => {
     };
 
     return {
-        transactions, page, hasMore, fetchTransactions,
+        transactions, page, hasMore, totalCount, fetchTransactions,
         quickLoading, addQuickTransaction,
         manualLoading, addManualTransaction,
         editLoading, updateTransaction,

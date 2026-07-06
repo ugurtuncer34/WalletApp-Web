@@ -16,6 +16,7 @@ import LogoutConfirmModal from '../Components/LogoutConfirmModal';
 import RecurringWidget from '../Components/RecurringWidget';
 import Toast from '../Components/Toast';
 import CryptoWidget from '../Components/CryptoWidget';
+import DataTable from '../Components/DataTable';
 
 export default function Home() {
   const [inputText, setInputText] = useState("");
@@ -40,6 +41,7 @@ export default function Home() {
   const [pwError, setPwError] = useState(null);
 
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [desktopRightTab, setDesktopRightTab] = useState('dashboard'); // 'dashboard' veya 'table'
 
   // --- BOTTOM SHEET SÜRÜKLEME (SWIPE) STATE'İ ---
   const [touchStartY, setTouchStartY] = useState(null);
@@ -67,7 +69,7 @@ export default function Home() {
   };
 
   const {
-    transactions, page, hasMore, fetchTransactions,
+    transactions, page, hasMore, totalCount, fetchTransactions,
     quickLoading, addQuickTransaction,
     manualLoading, addManualTransaction,
     editLoading, updateTransaction,
@@ -197,8 +199,6 @@ export default function Home() {
   };
 
   return (
-    // DİKKAT 1: Ana sarmalayıcıdaki 'pb-28' sadece ana sayfa HARİCİNDEKİ tablar için geçerli kılındı. 
-    // Ana sayfada (pb-0) sayfanın sekmesini engelliyoruz, liste özgürce akacak.
     <div className={`max-w-7xl mx-auto px-4 md:px-6 pt-2 lg:pt-4 ${activeTab === 'home' ? 'pb-0' : 'pb-28'} lg:pb-8 font-sans flex flex-col gap-4 lg:gap-6 relative`}>
 
       <Toast
@@ -210,36 +210,93 @@ export default function Home() {
       <QuickAddModal isOpen={isQuickModalOpen} onClose={() => setIsQuickModalOpen(false)} chipName={selectedChip} onSubmit={handleQuickModalSubmit} loading={quickLoading} />
       <EditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} initialData={editInitialData} masterData={masterData} onSubmit={handleEditSubmit} loading={editLoading} />
 
+      {/* YEPYENİ MASAÜSTÜ SAYFA BAŞLIĞI VE GÖRÜNÜM KONTROLLERİ */}
+      <div className="hidden lg:flex justify-between items-end w-full px-1">
+        <div>
+          <h1 className="text-xl font-black text-gray-800 dark:text-white tracking-tight flex items-center gap-2">
+            Finansal Merkez
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Hoş geldin <span className="capitalize font-semibold">{localStorage.getItem('wallet_user')}</span>. Aile bütçesini ve varlıklarını buradan yönetebilirsin.
+          </p>
+        </div>
+
+
+        {/* MASAÜSTÜ SEKMELERİ (Standart Akış - Ekranda hiçbir şeyi ezmez) */}
+        <div className="hidden lg:flex justify-end">
+          <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl p-1 rounded-full shadow-sm border border-gray-200/80 dark:border-slate-700/80 transition-all flex w-fit">
+            <button
+              onClick={() => setDesktopRightTab('dashboard')}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${desktopRightTab === 'dashboard' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
+            >
+              {/* Dashboard SVG İkonu */}
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              </svg>
+              Dashboard
+            </button>
+            <button
+              onClick={() => setDesktopRightTab('table')}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${desktopRightTab === 'table' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'}`}
+            >
+              {/* Tablo SVG İkonu */}
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              Tablo
+            </button>
+          </div>
+        </div>
+
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start lg:items-stretch">
 
         {/* TAB 1: ANA SAYFA */}
-        {/* DİKKAT 2: gap-2.5 ile mobildeki 3 kart arası boşluk daraltıldı. h-[calc(100dvh-85px)] ile liste tam ekranın altına kadar uzatıldı. */}
         <div className={`${activeTab === 'home' ? 'flex' : 'hidden'} lg:flex flex-col gap-2.5 lg:gap-6 lg:col-span-4 h-[calc(100dvh-85px)] lg:h-auto`}>
           <SmartInput inputText={inputText} setInputText={setInputText} onQuickAdd={handleSmartInputSubmit} loading={quickLoading} onChipClick={handleChipClick} />
 
           <div className="flex-1 min-h-0 relative">
-            {/* DİKKAT 3: pb-28 eklendi. Liste ekranın en altına kadar inecek, tab bar üzerinde yüzecek. pb-28 sayesinde son eleman tab barın altından kurtulacak! */}
             <div className="absolute inset-0 pb-28 lg:pb-0">
               <TransactionFeed transactions={transactions} categories={masterData.categories} hasMore={hasMore} onLoadMore={() => fetchTransactions(page + 1)} onEdit={handleOpenEditModal} onDelete={handleDeleteTransaction} />
             </div>
           </div>
         </div>
 
-        {/* TAB 2: GRAFİK */}
+        {/* TAB 2: GRAFİK & TABLO (SAĞ KOLON) */}
         <div className={`${activeTab === 'grafik' ? 'flex' : 'hidden'} lg:flex flex-col gap-4 lg:gap-6 lg:col-span-8`}>
-          <DashboardView
-            dashboard={dashboardInfo.dashboard}
-            dashboardMonth={dashboardInfo.dashboardMonth}
-            setDashboardMonth={dashboardInfo.setDashboardMonth}
-            dashboardYear={dashboardInfo.dashboardYear}
-            setDashboardYear={dashboardInfo.setDashboardYear}
-            onOpenSearch={() => setIsDesktopSearchOpen(true)}
-            onOpenForm={() => setIsDesktopFormOpen(true)}
-          />
+
+          {/* SADECE AKTİF OLAN COMPONENT RENDER EDİLİR */}
+          {desktopRightTab === 'table' ? (
+            <div className="hidden lg:flex flex-col flex-1">
+              <DataTable
+                data={transactions}
+                totalCount={totalCount}
+                onEdit={handleOpenEditModal}
+                onDelete={handleDeleteTransaction}
+                hasMore={hasMore}
+                onLoadMore={() => fetchTransactions(page + 1)}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 lg:gap-6">
+              <DashboardView
+                dashboard={dashboardInfo.dashboard}
+                dashboardMonth={dashboardInfo.dashboardMonth}
+                setDashboardMonth={dashboardInfo.setDashboardMonth}
+                dashboardYear={dashboardInfo.dashboardYear}
+                setDashboardYear={dashboardInfo.setDashboardYear}
+                onOpenSearch={() => setIsDesktopSearchOpen(true)}
+                onOpenForm={() => setIsDesktopFormOpen(true)}
+              />
+            </div>
+          )}
         </div>
       </div>
 
       {/* GELECEK RADAR ÇİZGİSİ (Abonelikler, Taksitler ve Kripto) */}
+      {/* <div className={`${activeTab === 'grafik' ? 'flex' : 'hidden'} ${desktopRightTab === 'dashboard' ? 'lg:flex' : 'lg:hidden'} flex-col gap-4 lg:gap-6 w-full`}> */}
       <div className={`${activeTab === 'grafik' ? 'flex' : 'hidden'} lg:flex flex-col gap-4 lg:gap-6 w-full`}>
         <RecurringWidget masterData={masterData} />
         <CryptoWidget />
@@ -343,7 +400,6 @@ export default function Home() {
       />
 
       {/* MOBİL ALT MENÜ (TAB BAR) */}
-      {/* Çift katmanlı div yapısı kaldırıldı. Yükseklik icon-only tasarıma uygun olarak 50px + safe-area olarak revize edildi. */}
       <div
         className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-gray-200 dark:border-slate-800 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] flex justify-around items-center px-2"
         style={{
@@ -358,7 +414,6 @@ export default function Home() {
           <svg xmlns="http://www.w3.org/2000/svg" className={`w-6 h-6 transition-all duration-300 ${activeTab === 'home' ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'}`} fill={activeTab === 'home' ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={activeTab === 'home' ? '0' : '2'}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
-          {/* Aktiflik noktası buton sınırları içinde bottom-0 konumuna çekildi */}
           <span className={`absolute bottom-0 w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 transition-all duration-300 ${activeTab === 'home' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}></span>
         </button>
 
@@ -372,7 +427,6 @@ export default function Home() {
         </button>
 
         {/* 3. ORTA BUTON (+) */}
-        {/* Bar yüksekliği optimize edildiği için taşma payı -top-3 olarak dengelendi */}
         <div className="relative -top-3">
           <button onClick={() => setIsBottomSheetOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-[3.25rem] h-[3.25rem] flex items-center justify-center shadow-[0_8px_20px_-6px_rgba(37,99,235,0.6)] dark:shadow-[0_8px_20px_-6px_rgba(59,130,246,0.5)] transition-transform active:scale-90">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
