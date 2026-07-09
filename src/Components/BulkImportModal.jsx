@@ -3,6 +3,7 @@ import CategorySelect from './CategorySelect';
 import SearchableSelect from './Combobox';
 
 const NLP_API_URL = import.meta.env.VITE_NLP_API_URL || "http://localhost:8000/api/nlp/parse-statement";
+const NLP_API_SECRET = import.meta.env.VITE_NLP_API_SECRET || "development_fallback_secret";
 
 export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSubmit, loading, onAddNewMerchant }) {
     const { groupedCategories, merchants, categories } = masterData;
@@ -43,6 +44,9 @@ export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSub
         try {
             const response = await fetch(NLP_API_URL, {
                 method: 'POST',
+                headers: {
+                    'X-API-Key': NLP_API_SECRET
+                },
                 body: formData
             });
 

@@ -170,7 +170,7 @@ export default function DashboardView({
                                     className="flex-[3] px-2 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:hover:bg-emerald-800/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 rounded-xl shadow-sm text-xs font-bold transition flex items-center justify-center gap-2"
                                     title="Import Statement"
                                 >
-                                    📄 Import
+                                    📄 Ekstre Yükle
                                 </button>
                             )}
                         </div>
