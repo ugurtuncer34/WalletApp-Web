@@ -234,7 +234,7 @@ export default function Home() {
     try {
       const token = localStorage.getItem('wallet_token');
       const API_BASE = import.meta.env.VITE_API_BASE_URL;
-      
+
       const response = await fetch(`${API_BASE}/merchants`, {
         method: 'POST',
         headers: {
@@ -243,18 +243,18 @@ export default function Home() {
         },
         body: JSON.stringify(merchantData)
       });
-      
+
       if (response.ok) {
         const newMerchant = await response.json();
-        
+
         // Mutate the local array to immediately reflect the new data in the dropdown
         if (masterData && masterData.merchants) {
           masterData.merchants.push(newMerchant);
         }
-        
+
         // State update forces a re-render, passing the updated array to the modal
         setToast({ message: 'Merchant successfully added!', type: 'success' });
-        
+
         return newMerchant;
       } else {
         setToast({ message: 'Failed to create merchant.', type: 'error' });
@@ -263,9 +263,11 @@ export default function Home() {
       console.error("Merchant creation error:", err);
       setToast({ message: 'Connection error while adding merchant.', type: 'error' });
     }
-    
+
     return null;
   };
+
+  const isBulkImportEnabled = import.meta.env.VITE_ENABLE_BULK_IMPORT === 'true';
 
   return (
     <div className={`max-w-7xl mx-auto px-4 md:px-6 pt-2 lg:pt-4 ${activeTab === 'home' ? 'pb-0' : 'pb-28'} lg:pb-8 font-sans flex flex-col gap-4 lg:gap-6 relative`}>
@@ -278,14 +280,16 @@ export default function Home() {
 
       <QuickAddModal isOpen={isQuickModalOpen} onClose={() => setIsQuickModalOpen(false)} chipName={selectedChip} onSubmit={handleQuickModalSubmit} loading={quickLoading} />
       <EditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} initialData={editInitialData} masterData={masterData} onSubmit={handleEditSubmit} loading={editLoading} />
-      <BulkImportModal
-        isOpen={isBulkModalOpen}
-        onClose={() => setIsBulkModalOpen(false)}
-        masterData={masterData}
-        onBulkSubmit={handleBulkSubmit}
-        loading={bulkLoading}
-        onAddNewMerchant={handleAddNewMerchant}
-      />
+      {isBulkImportEnabled && (
+        <BulkImportModal
+          isOpen={isBulkModalOpen}
+          onClose={() => setIsBulkModalOpen(false)}
+          masterData={masterData}
+          onBulkSubmit={handleBulkSubmit}
+          loading={bulkLoading}
+          onAddNewMerchant={handleAddNewMerchant}
+        />
+      )}
 
       {/* YEPYENİ MASAÜSTÜ SAYFA BAŞLIĞI VE GÖRÜNÜM KONTROLLERİ */}
       <div className="hidden lg:flex justify-between items-end w-full px-1">
