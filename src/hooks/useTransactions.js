@@ -24,6 +24,8 @@ export const useTransactions = (onSuccess) => {
     const [manualLoading, setManualLoading] = useState(false);
     const [editLoading, setEditLoading] = useState(false);
 
+    const [bulkLoading, setBulkLoading] = useState(false);
+
     const navigate = useNavigate();
     const token = localStorage.getItem('wallet_token');
     const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -116,6 +118,36 @@ export const useTransactions = (onSuccess) => {
         }
     };
 
+    const addBulkTransactions = async (payloadArray) => {
+        setBulkLoading(true);
+        try {
+            const res = await fetch(`${API_BASE}/transactions/bulk`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'X-Idempotency-Key': generateUUID()
+                },
+                body: JSON.stringify(payloadArray)
+            });
+            if (res.ok) {
+                fetchTransactions(1);
+                if (onSuccess) onSuccess();
+                return { success: true };
+            } else {
+                const errData = await res.json();
+                alert("Toplu ekleme hatası: " + (errData.message || "Unknown error"));
+                return { success: false };
+            }
+        } catch (err) {
+            alert("Sunucuya bağlanılamadı.");
+            console.error("Toplu ekleme hatası", err);
+            return { success: false };
+        } finally {
+            setBulkLoading(false);
+        }
+    };
+
     const updateTransaction = async (id, payload) => {
         setEditLoading(true);
         try {
@@ -171,6 +203,7 @@ export const useTransactions = (onSuccess) => {
         quickLoading, addQuickTransaction,
         manualLoading, addManualTransaction,
         editLoading, updateTransaction,
-        deleteTransaction
+        deleteTransaction, 
+        bulkLoading, addBulkTransactions
     };
 };

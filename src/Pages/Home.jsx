@@ -17,6 +17,7 @@ import RecurringWidget from '../Components/RecurringWidget';
 import Toast from '../Components/Toast';
 import CryptoWidget from '../Components/CryptoWidget';
 import DataTable from '../Components/DataTable';
+import BulkImportModal from '../Components/BulkImportModal';
 
 export default function Home() {
   const [inputText, setInputText] = useState("");
@@ -25,6 +26,8 @@ export default function Home() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editInitialData, setEditInitialData] = useState(null);
+
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState('home');
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
@@ -74,7 +77,8 @@ export default function Home() {
     quickLoading, addQuickTransaction,
     manualLoading, addManualTransaction,
     editLoading, updateTransaction,
-    deleteTransaction
+    deleteTransaction,
+    bulkLoading, addBulkTransactions
   } = useTransactions(handleTransactionSuccess);
 
   useEffect(() => {
@@ -227,6 +231,13 @@ export default function Home() {
 
       <QuickAddModal isOpen={isQuickModalOpen} onClose={() => setIsQuickModalOpen(false)} chipName={selectedChip} onSubmit={handleQuickModalSubmit} loading={quickLoading} />
       <EditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} initialData={editInitialData} masterData={masterData} onSubmit={handleEditSubmit} loading={editLoading} />
+      <BulkImportModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        masterData={masterData}
+        onBulkSubmit={addBulkTransactions}
+        loading={bulkLoading}
+      />
 
       {/* YEPYENİ MASAÜSTÜ SAYFA BAŞLIĞI VE GÖRÜNÜM KONTROLLERİ */}
       <div className="hidden lg:flex justify-between items-end w-full px-1">
@@ -313,6 +324,7 @@ export default function Home() {
                 onCurrencySelect={dashboardInfo.setSelectedCurrencyId}
                 onOpenSearch={() => setIsDesktopSearchOpen(true)}
                 onOpenForm={() => setIsDesktopFormOpen(true)}
+                onOpenBulkModal={() => setIsBulkModalOpen(true)}
               />
             </div>
           )}
