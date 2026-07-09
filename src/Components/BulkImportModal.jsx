@@ -2,17 +2,20 @@ import { useState } from 'react';
 import CategorySelect from './CategorySelect';
 import SearchableSelect from './Combobox';
 
+const NLP_API_URL = import.meta.env.VITE_NLP_API_URL || "http://localhost:8000/api/nlp/parse-statement";
 
-export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSubmit, loading }) {
+export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSubmit, loading, onAddNewMerchant }) {
     const { groupedCategories, merchants, categories } = masterData;
     const [step, setStep] = useState(1);
     const [file, setFile] = useState(null);
     const [nlpLoading, setNlpLoading] = useState(false);
     const [parsedData, setParsedData] = useState([]);
-    
-    const NLP_URL = import.meta.env.VITE_NLP_API_URL;
-    console.log("NLP_URL::");
-    console.log(NLP_URL);
+
+    // İşyeri Ekleme (Mini Modal) State'leri
+    const [isNewMerchantModalOpen, setIsNewMerchantModalOpen] = useState(false);
+    const [newMerchantName, setNewMerchantName] = useState("");
+    const [newMerchantCategoryId, setNewMerchantCategoryId] = useState("");
+    const [activeRowIdForNewMerchant, setActiveRowIdForNewMerchant] = useState(null);
 
     if (!isOpen) return null;
 
@@ -38,7 +41,7 @@ export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSub
         formData.append("merchants", merchantsJson);
 
         try {
-            const response = await fetch(NLP_URL, {
+            const response = await fetch(NLP_API_URL, {
                 method: 'POST',
                 body: formData
             });
@@ -66,11 +69,11 @@ export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSub
                 setParsedData(mappedTransactions);
                 setStep(2);
             } else {
-                alert("NLP İşleme hatası: " + result.message);
+                alert("Yapay Zeka Çözümleme Hatası: " + result.message);
             }
         } catch (err) {
             console.error("NLP bağlantı hatası", err);
-            alert("NLP mikroservisine bağlanılamadı.");
+            alert("NLP mikroservisine bağlanılamadı. Servisin çalıştığından emin olun.");
         } finally {
             setNlpLoading(false);
         }
@@ -114,14 +117,45 @@ export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSub
         onClose();
     };
 
+    // İşyeri Kaydetme Fonksiyonu
+    const handleSaveNewMerchant = async () => {
+        if (!newMerchantName || !newMerchantCategoryId) {
+            alert("Lütfen işyeri adını ve varsayılan kategorisini seçin.");
+            return;
+        }
+
+        // Eğer .NET tarafında bir Ekleme API'si prop olarak geldiyse onu çağır
+        if (onAddNewMerchant) {
+            const newMerchant = await onAddNewMerchant({
+                name: newMerchantName,
+                defaultCategoryId: newMerchantCategoryId
+            });
+
+            // Başarıyla eklendiyse, ilgili satırın seçimini yeni işyeri ile güncelle
+            if (newMerchant && activeRowIdForNewMerchant) {
+                handleRowChange(activeRowIdForNewMerchant, 'merchantId', newMerchant.id);
+                handleRowChange(activeRowIdForNewMerchant, 'categoryId', newMerchantCategoryId);
+            }
+        } else {
+            alert("Yeni işyeri ekleme fonksiyonu (onAddNewMerchant) bağlanmamış!");
+        }
+
+        // Modalı sıfırla ve kapat
+        setIsNewMerchantModalOpen(false);
+        setNewMerchantName("");
+        setNewMerchantCategoryId("");
+        setActiveRowIdForNewMerchant(null);
+    };
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={handleClose}></div>
             
-            <div className="relative bg-white dark:bg-slate-900 rounded-3xl w-full max-w-5xl shadow-2xl flex flex-col max-h-[90vh] border border-gray-100 dark:border-slate-800">
+            <div className="relative bg-white dark:bg-slate-900 rounded-3xl w-full max-w-6xl shadow-2xl flex flex-col max-h-[90vh] border border-gray-100 dark:border-slate-800">
+                
                 <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-slate-800">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                        {step === 1 ? 'Ekstre Yükle (PDF)' : 'Harcama İncele & Onayla'}
+                        {step === 1 ? 'Ekstre İçe Aktar (PDF)' : 'İşlemleri İncele ve Onayla'}
                     </h3>
                     <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition">✕</button>
                 </div>
@@ -143,27 +177,27 @@ export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSub
                                 disabled={!file || nlpLoading}
                                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow-md disabled:opacity-50"
                             >
-                                {nlpLoading ? 'Yapay zeka ile analiz ediliyor...' : 'Parse Statement'}
+                                {nlpLoading ? 'Yapay Zeka Ekstreyi Çözümlüyor...' : 'Ekstreyi Çözümle'}
                             </button>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-4">
                             <div className="bg-blue-50 dark:bg-slate-800 p-4 rounded-xl flex justify-between items-center border border-blue-100 dark:border-slate-700">
                                 <span className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                                    {parsedData.length} adet harcama bulundu. Lütfen kayıttan önce kontrol edin.
+                                    Toplam {parsedData.length} işlem bulundu. Lütfen kaydetmeden önce eşleşmeyen işyerlerini kontrol edin.
                                 </span>
                             </div>
 
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto pb-32">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="border-b border-gray-200 dark:border-slate-700">
-                                            <th className="p-3 text-xs font-bold text-gray-500">Include</th>
-                                            <th className="p-3 text-xs font-bold text-gray-500">Date</th>
-                                            <th className="p-3 text-xs font-bold text-gray-500">Amount</th>
-                                            <th className="p-3 text-xs font-bold text-gray-500">Raw Description</th>
-                                            <th className="p-3 text-xs font-bold text-gray-500">Merchant Match</th>
-                                            <th className="p-3 text-xs font-bold text-gray-500">Category</th>
+                                            <th className="p-3 text-xs font-bold text-gray-500 text-center">Dahil Et</th>
+                                            <th className="p-3 text-xs font-bold text-gray-500">Tarih</th>
+                                            <th className="p-3 text-xs font-bold text-gray-500">Tutar</th>
+                                            <th className="p-3 text-xs font-bold text-gray-500">Ham Açıklama (Ekstre)</th>
+                                            <th className="p-3 text-xs font-bold text-gray-500">İşyeri Eşleştirme</th>
+                                            <th className="p-3 text-xs font-bold text-gray-500">Kategori</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -178,19 +212,32 @@ export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSub
                                                     />
                                                 </td>
                                                 <td className="p-3 text-xs whitespace-nowrap">{item.date}</td>
-                                                <td className="p-3 font-bold">{item.amount}</td>
+                                                <td className="p-3 font-bold">{item.amount} TL</td>
                                                 <td className="p-3 text-xs max-w-[200px] truncate" title={item.rawMerchant}>
                                                     {item.rawMerchant}
                                                 </td>
-                                                <td className="p-3 min-w-[200px]">
-                                                    <div className={`p-1 rounded-lg border ${item.isMerchantMatched ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-900/20' : 'border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/20'}`}>
-                                                        <SearchableSelect 
-                                                            options={merchants} 
-                                                            value={item.merchantId} 
-                                                            onChange={(val) => handleRowChange(item.id, 'merchantId', val)} 
-                                                            placeholder={item.isMerchantMatched ? item.description : "Select Merchant..."} 
-                                                            emptyLabel="Clear Selection" 
-                                                        />
+                                                <td className="p-3 min-w-[250px]">
+                                                    <div className="flex gap-2 items-center">
+                                                        <div className={`flex-1 p-1 rounded-lg border ${item.isMerchantMatched ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-900/20' : 'border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/20'}`}>
+                                                            <SearchableSelect 
+                                                                options={merchants} 
+                                                                value={item.merchantId} 
+                                                                onChange={(val) => handleRowChange(item.id, 'merchantId', val)} 
+                                                                placeholder={item.isMerchantMatched ? item.description : "İşyeri Seçin..."} 
+                                                                emptyLabel="Seçimi Temizle" 
+                                                            />
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => {
+                                                                setNewMerchantName(item.rawMerchant); 
+                                                                setActiveRowIdForNewMerchant(item.id);
+                                                                setIsNewMerchantModalOpen(true);
+                                                            }}
+                                                            className="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition border border-gray-200 dark:border-slate-700"
+                                                            title="Yeni İşyeri Ekle"
+                                                        >
+                                                            +
+                                                        </button>
                                                     </div>
                                                 </td>
                                                 <td className="p-3 min-w-[200px]">
@@ -198,7 +245,7 @@ export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSub
                                                         options={groupedCategories} 
                                                         value={item.categoryId} 
                                                         onChange={(val) => handleRowChange(item.id, 'categoryId', val)} 
-                                                        placeholder="Select Category" 
+                                                        placeholder="Kategori Seçin" 
                                                         disableParents={true} 
                                                     />
                                                 </td>
@@ -212,17 +259,63 @@ export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSub
                 </div>
 
                 {step === 2 && (
-                    <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 rounded-b-3xl flex justify-end gap-3">
+                    <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 rounded-b-3xl flex justify-end gap-3 z-10">
                         <button onClick={handleClose} className="px-6 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-300 transition hover:bg-gray-50">
-                            İptal Et
+                            İptal
                         </button>
                         <button 
                             onClick={handleSubmitToBackend} 
                             disabled={loading || parsedData.filter(x => !x.excluded).length === 0}
                             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md disabled:opacity-50 transition"
                         >
-                            {loading ? 'Veritabanına kaydediliyor...' : `${parsedData.filter(x => !x.excluded).length} Adet Harcama Ekle`}
+                            {loading ? 'Veritabanına Kaydediliyor...' : `${parsedData.filter(x => !x.excluded).length} İşlemi Sisteme Kaydet`}
                         </button>
+                    </div>
+                )}
+
+                {isNewMerchantModalOpen && (
+                    <div className="absolute inset-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 rounded-3xl">
+                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-slate-700 w-full max-w-sm">
+                            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Yeni İşyeri Ekle</h4>
+                            
+                            <div className="flex flex-col gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 mb-1">İşyeri Adı (Örn: OPET, FİLE)</label>
+                                    <input 
+                                        type="text"
+                                        value={newMerchantName}
+                                        onChange={(e) => setNewMerchantName(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-transparent text-gray-900 dark:text-white focus:outline-none focus:border-blue-500"
+                                        placeholder="Temiz işyeri adını girin..."
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <label className="block text-xs font-bold text-gray-500 mb-1">Varsayılan Kategori</label>
+                                    <CategorySelect 
+                                        options={groupedCategories} 
+                                        value={newMerchantCategoryId} 
+                                        onChange={setNewMerchantCategoryId} 
+                                        placeholder="Kategori Seçin" 
+                                        disableParents={true} 
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-2 mt-2">
+                                <button 
+                                    onClick={() => setIsNewMerchantModalOpen(false)}
+                                    className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition"
+                                >
+                                    İptal
+                                </button>
+                                <button 
+                                    onClick={handleSaveNewMerchant}
+                                    className="px-4 py-2 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-sm"
+                                >
+                                    Kaydet
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
