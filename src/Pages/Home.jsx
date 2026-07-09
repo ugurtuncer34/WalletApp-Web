@@ -192,6 +192,16 @@ export default function Home() {
     return res;
   };
 
+  const handleBulkSubmit = async (payload) => {
+    const res = await addBulkTransactions(payload);
+    if (res.success) {
+      setToast({ message: `${payload.length} adet harcama başarıyla eklendi!!`, type: 'success' });
+    } else {
+      setToast({ message: 'Toplu ekleme sırasında hata oluştu.', type: 'error' });
+    }
+    return res;
+  };
+
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (passwords.newPassword !== passwords.confirmPassword) {
@@ -272,7 +282,7 @@ export default function Home() {
         isOpen={isBulkModalOpen}
         onClose={() => setIsBulkModalOpen(false)}
         masterData={masterData}
-        onBulkSubmit={addBulkTransactions}
+        onBulkSubmit={handleBulkSubmit}
         loading={bulkLoading}
         onAddNewMerchant={handleAddNewMerchant}
       />
