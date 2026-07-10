@@ -2,9 +2,6 @@ import { useState } from 'react';
 import CategorySelect from './CategorySelect';
 import SearchableSelect from './Combobox';
 
-const NLP_API_URL = import.meta.env.VITE_NLP_API_URL || "http://localhost:8000/api/nlp/parse-statement";
-const NLP_API_SECRET = import.meta.env.VITE_NLP_API_SECRET || "development_fallback_secret";
-
 export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSubmit, loading, onAddNewMerchant }) {
     const { groupedCategories, merchants, categories } = masterData;
     const [step, setStep] = useState(1);
@@ -30,25 +27,28 @@ export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSub
         if (!file) return;
         setNlpLoading(true);
 
-        const categoriesJson = JSON.stringify(categories.map(c => c.name));
-        const merchantsJson = JSON.stringify(merchants.map(m => ({
-            name: m.name,
-            defaultCategoryName: m.defaultCategory?.name
-        })));
-
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("categories", categoriesJson);
-        formData.append("merchants", merchantsJson);
 
         try {
-            const response = await fetch(NLP_API_URL, {
+            const token = localStorage.getItem('wallet_token');
+            const API_BASE = import.meta.env.VITE_API_BASE_URL;
+            
+            const idempotencyKey = window.crypto?.randomUUID ? window.crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+
+            const response = await fetch(`${API_BASE}/transactions/parse-statement`, {
                 method: 'POST',
                 headers: {
-                    'X-API-Key': NLP_API_SECRET
+                    'Authorization': `Bearer ${token}`,
+                    'X-Idempotency-Key': idempotencyKey
                 },
                 body: formData
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Ekstre çözümlenirken backend sunucusunda bir hata oluştu.");
+            }
 
             const result = await response.json();
 
@@ -73,11 +73,11 @@ export default function BulkImportModal({ isOpen, onClose, masterData, onBulkSub
                 setParsedData(mappedTransactions);
                 setStep(2);
             } else {
-                alert("Yapay Zeka Çözümleme Hatası: " + result.message);
+                alert("Yapay Zeka Çözümleme Hatası: " + (result.message || "Veri alınamadı."));
             }
         } catch (err) {
             console.error("NLP bağlantı hatası", err);
-            alert("NLP mikroservisine bağlanılamadı. Servisin çalıştığından emin olun.");
+            alert(`Sistem Hatası: ${err.message}`);
         } finally {
             setNlpLoading(false);
         }
